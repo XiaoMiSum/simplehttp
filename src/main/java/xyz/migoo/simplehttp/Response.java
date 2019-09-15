@@ -1,13 +1,13 @@
 package xyz.migoo.simplehttp;
 
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import org.apache.http.Header;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * @author xiaomi
@@ -41,10 +41,6 @@ public class Response {
         return this;
     }
 
-    public boolean isSuccess() {
-        return response != null && response.getStatusLine().getStatusCode() == 200;
-    }
-
     public int statusCode() {
         return response != null ? response.getStatusLine().getStatusCode() : -1;
     }
@@ -61,7 +57,7 @@ public class Response {
         return context;
     }
 
-    public String body() {
+    public String text() {
         try {
             return EntityUtils.toString(response.getEntity());
         } catch (IOException e) {
@@ -69,35 +65,7 @@ public class Response {
         }
     }
 
-    public JSONArray jsonArray() {
-        try {
-            return JSONArray.parseArray(EntityUtils.toString(response.getEntity()));
-        } catch (Throwable e) {
-            return null;
-        }
-    }
-
-    public JSONObject jsonObject() {
-        try {
-            return JSONObject.parseObject(EntityUtils.toString(response.getEntity()));
-        } catch (Throwable e) {
-            return null;
-        }
-    }
-
-    public JSONArray cookies() {
-        if (context != null && context.getCookieStore() != null && context.getCookieStore().getCookies() != null) {
-            JSONArray cookies = new JSONArray();
-            context.getCookieStore().getCookies().forEach(cookie -> {
-                JSONObject o = new JSONObject();
-                o.put("name", cookie.getName());
-                o.put("value", cookie.getValue());
-                o.put("domain", cookie.getDomain());
-                o.put("path", cookie.getPath());
-                cookies.add(o);
-            });
-            return cookies;
-        }
-        return null;
+    public List<Cookie> cookies() {
+        return context != null ? context.getCookieStore().getCookies() : null;
     }
 }

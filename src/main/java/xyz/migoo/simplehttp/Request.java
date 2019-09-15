@@ -1,7 +1,5 @@
 package xyz.migoo.simplehttp;
 
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -11,12 +9,12 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.*;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.FileEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.Args;
@@ -108,11 +106,6 @@ public class Request {
         return this.body(new FileEntity(file, ContentType.DEFAULT_BINARY));
     }
 
-    public Request data(String data) {
-        Args.notBlank(data, "data");
-        return this.data(JSONObject.parseObject(data));
-    }
-
     public Request data(Form data) {
         Args.notNull(data, "data");
         this.form = data;
@@ -126,11 +119,6 @@ public class Request {
         }
         data.forEach((k, v) -> form.add(k, String.valueOf(v)));
         return this.data(form);
-    }
-
-    public Request query(String query) {
-        Args.notBlank(query, "query");
-        return this.query(JSONObject.parseObject(query));
     }
 
     public Request query(Map<String, Object> query) {
@@ -154,41 +142,23 @@ public class Request {
         return this;
     }
 
-    public Request cookies(JSONArray cookies){
-        Args.notNull(cookies, "cookies");
-        context = HttpClientContext.create();
-        CookieStore cookieStore = new BasicCookieStore();
-        for (int i = 0; i < cookies.size(); i++) {
-            JSONObject json = cookies.getJSONObject(i);
-            BasicClientCookie cookie = new BasicClientCookie(json.getString("name"), json.getString("value"));
-            cookie.setDomain(json.getString("domain"));
-            cookie.setPath(json.getString("path"));
-            cookieStore.addCookie(cookie);
+    public Request cookies(CookieStore cookieStore){
+        Args.notNull(cookieStore, "cookies");
+        if (context == null) {
+            context = HttpClientContext.create();
         }
         context.setCookieStore(cookieStore);
         return this;
     }
 
-    public Request cookies(JSONObject cookies){
+    public Request cookies(List<Cookie> cookies){
         Args.notNull(cookies, "cookies");
-        context = HttpClientContext.create();
+        if (context == null) {
+            context = HttpClientContext.create();
+        }
         CookieStore cookieStore = new BasicCookieStore();
-        BasicClientCookie cookie = new BasicClientCookie(cookies.getString("name"), cookies.getString("value"));
-        cookie.setDomain(cookies.getString("domain"));
-        cookie.setPath(cookies.getString("path"));
-        cookieStore.addCookie(cookie);
+        cookies.forEach(cookieStore::addCookie);
         context.setCookieStore(cookieStore);
-        return this;
-    }
-
-    public Request headers(String headers) {
-        Args.notBlank(headers, "headers");
-        return this.headers(JSONObject.parseObject(headers));
-    }
-
-    public Request headers(JSONObject headers){
-        Args.notNull(headers, "headers");
-        headers.forEach( (k, v) -> request.addHeader(k, String.valueOf(v)));
         return this;
     }
 
@@ -224,6 +194,18 @@ public class Request {
     }
 
     public Response execute(CloseableHttpClient client) throws HttpException {
+        this.setRequestConfig(client);
+        try {
+            this.query();
+            return new Response().startTime(System.currentTimeMillis())
+                    .response(client.execute(request, context))
+                    .context(context).endTime(System.currentTimeMillis());
+        } catch (Exception e) {
+            throw new HttpException("request execute error.", e);
+        }
+    }
+
+    private void setRequestConfig(CloseableHttpClient client){
         final RequestConfig.Builder builder;
         if (client instanceof Configurable) {
             builder = RequestConfig.copy(((Configurable) client).getConfig());
@@ -244,14 +226,6 @@ public class Request {
         }
         final RequestConfig config = builder.setRedirectsEnabled(true).build();
         this.request.setConfig(config);
-        try {
-            this.query();
-            return new Response().startTime(System.currentTimeMillis())
-                    .response(client.execute(request, context))
-                    .context(context).endTime(System.currentTimeMillis());
-        } catch (Exception e) {
-            throw new HttpException("request execute error.", e);
-        }
     }
 
     public Request useExpectContinue() {
