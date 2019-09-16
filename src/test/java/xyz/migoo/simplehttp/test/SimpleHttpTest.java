@@ -1,7 +1,9 @@
 package xyz.migoo.simplehttp.test;
 
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import xyz.migoo.simplehttp.Client;
 import xyz.migoo.simplehttp.HttpException;
 import xyz.migoo.simplehttp.Request;
 
@@ -35,5 +37,16 @@ class SimpleHttpTest {
     @Test()
     void testException() {
         Assertions.assertThrows(HttpException.class, () -> Request.put("http://127.0.0.1:8080").execute());
+    }
+
+    @Test
+    void testDefaultClient() throws HttpException {
+        Assertions.assertTrue(Client.newClient().execute(Request.get("http://migoo.xyz")).text().contains("todos"));
+    }
+
+    @Test
+    void testNewClient() throws HttpException {
+        Assertions.assertTrue(Client.newClient(HttpClientBuilder.create().build())
+                .execute(Request.get("http://migoo.xyz")).text().contains("todos"));
     }
 }

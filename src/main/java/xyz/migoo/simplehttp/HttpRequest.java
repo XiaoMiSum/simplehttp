@@ -16,7 +16,6 @@ import java.net.URI;
  * @author xiaomi
  * @date 2019/9/13 11:00
  */
-
 class HttpRequest extends AbstractHttpMessage implements HttpUriRequest, Configurable {
 
     private final String method;
@@ -24,7 +23,7 @@ class HttpRequest extends AbstractHttpMessage implements HttpUriRequest, Configu
     private URI uri;
     private RequestConfig config;
 
-    HttpRequest(String method, URI requestURI) {
+    public HttpRequest(String method, URI requestURI) {
         Args.notBlank(method, "Method");
         Args.notNull(requestURI, "Request URI");
         this.method = method;

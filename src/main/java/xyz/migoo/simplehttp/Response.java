@@ -13,7 +13,6 @@ import java.util.List;
  * @author xiaomi
  * @date 2019/9/13 11:01
  */
-
 public class Response {
 
     private Long startTime;
@@ -21,7 +20,7 @@ public class Response {
     private HttpClientContext context;
     private CloseableHttpResponse response;
 
-    Response response(CloseableHttpResponse response) {
+    public Response response(CloseableHttpResponse response) {
         this.response = response;
         return this;
     }
@@ -47,6 +46,14 @@ public class Response {
 
     public Header[] headers() {
         return response.getAllHeaders();
+    }
+
+    public long startTime(){
+        return startTime;
+    }
+
+    public long endTime(){
+        return endTime;
     }
 
     public long duration() {

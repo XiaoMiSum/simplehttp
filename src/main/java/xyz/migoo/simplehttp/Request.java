@@ -73,7 +73,7 @@ public class Request {
         return new Request(new HttpRequest(HttpOptions.METHOD_NAME, URI.create(url)));
     }
 
-    private Request(HttpRequest request) {
+    public Request(HttpRequest request) {
         super();
         this.request = request;
     }
