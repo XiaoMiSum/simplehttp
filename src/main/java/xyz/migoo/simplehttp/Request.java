@@ -267,4 +267,8 @@ public class Request {
     public String method(){
         return request.getMethod();
     }
+
+    public String uri(){
+        return request.getURI().toString();
+    }
 }
