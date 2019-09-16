@@ -16,7 +16,7 @@ import java.net.URI;
  * @author xiaomi
  * @date 2019/9/13 11:00
  */
-class HttpRequest extends AbstractHttpMessage implements HttpUriRequest, Configurable {
+public class HttpRequest extends AbstractHttpMessage implements HttpUriRequest, Configurable {
 
     private final String method;
     private ProtocolVersion version;

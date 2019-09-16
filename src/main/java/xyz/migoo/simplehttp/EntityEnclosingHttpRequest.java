@@ -11,7 +11,7 @@ import java.net.URI;
  * @author xiaomi
  * @date 2019/9/13 10:59
  */
-class EntityEnclosingHttpRequest extends HttpRequest implements HttpEntityEnclosingRequest {
+public class EntityEnclosingHttpRequest extends HttpRequest implements HttpEntityEnclosingRequest {
 
     private HttpEntity entity;
 
