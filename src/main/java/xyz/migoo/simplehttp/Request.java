@@ -73,7 +73,11 @@ public class Request {
         return new Request(new HttpRequest(HttpOptions.METHOD_NAME, URI.create(url)));
     }
 
-    public Request(HttpRequest request) {
+    protected Request() {
+        super();
+    }
+
+    protected Request(HttpRequest request) {
         super();
         this.request = request;
     }
@@ -92,7 +96,8 @@ public class Request {
     public Request bodyJson(String body) {
         Args.notBlank(body, "body");
         this.body = body;
-        return this.body(new StringEntity(body, ContentType.APPLICATION_JSON));
+        this.addHeader("Content-Type", "application/json; charset=utf-8");
+        return this.body(new StringEntity(body, StandardCharsets.UTF_8));
     }
 
     public Request bodyFile(String file) {
@@ -109,24 +114,25 @@ public class Request {
     public Request data(Form data) {
         Args.notNull(data, "data");
         this.form = data;
+        this.addHeader("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
         return this.body(new UrlEncodedFormEntity(form.build(), StandardCharsets.UTF_8));
     }
 
-    public Request data(Map<String, Object> data) {
+    public Request data(Map<String, String> data) {
         Args.notNull(data, "data");
         if (form == null) {
             form = Form.form();
         }
-        data.forEach((k, v) -> form.add(k, String.valueOf(v)));
+        data.forEach((k, v) -> form.add(k, v));
         return this.data(form);
     }
 
-    public Request query(Map<String, Object> query) {
+    public Request query(Map<String, String> query) {
         Args.notNull(query, "query");
         if (form == null) {
             form = Form.form();
         }
-        query.forEach((k, v) -> form.add(k, String.valueOf(v)));
+        query.forEach((k, v) -> form.add(k, v));
         return this.query(form);
     }
 
@@ -246,6 +252,10 @@ public class Request {
     public Request connectTimeout(final int timeout) {
         this.connectTimeout = timeout;
         return this;
+    }
+
+    protected void request(HttpRequest request){
+        this.request = request;
     }
 
     public String body(){

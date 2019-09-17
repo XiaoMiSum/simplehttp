@@ -17,6 +17,7 @@ public class Response {
 
     private Long startTime;
     private Long endTime;
+    private String text;
     private HttpClientContext context;
     private CloseableHttpResponse response;
 
@@ -66,7 +67,7 @@ public class Response {
 
     public String text() {
         try {
-            return EntityUtils.toString(response.getEntity());
+           return text = text == null ? EntityUtils.toString(response.getEntity()) : text;
         } catch (IOException e) {
             return null;
         }
