@@ -36,14 +36,17 @@ public class Form {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("{");
-        for (NameValuePair pair : data){
+        for (int i = 0; i < data.size(); i++){
+            NameValuePair pair = data.get(i);
             sb.append("\"").append(pair.getName()).append("\": ");
             if (pair.getValue() != null) {
                 sb.append("\"").append(pair.getValue()).append("\"");
             } else {
                 sb.append(pair.getValue());
             }
-            sb.append(",");
+            if (i < data.size() -1){
+                sb.append(",");
+            }
         }
         sb.append("}");
         return sb.toString();
