@@ -281,4 +281,9 @@ public class Request {
     public String uri(){
         return request.getURI().toString();
     }
+
+    public String uriNotContainsParam(){
+        String uri = uri();
+        return uri.substring(0, uri.contains("?") ? uri.indexOf("?") : uri.length());
+    }
 }
