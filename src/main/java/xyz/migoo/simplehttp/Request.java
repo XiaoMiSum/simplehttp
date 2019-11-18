@@ -120,18 +120,14 @@ public class Request {
 
     public Request data(Map<String, String> data) {
         Args.notNull(data, "data");
-        if (form == null) {
-            form = Form.form();
-        }
+        form = form == null ? Form.form() : form;
         data.forEach((k, v) -> form.add(k, v));
         return this.data(form);
     }
 
     public Request query(Map<String, String> query) {
         Args.notNull(query, "query");
-        if (form == null) {
-            form = Form.form();
-        }
+        form = form == null ? Form.form() : form;
         query.forEach((k, v) -> form.add(k, v));
         return this.query(form);
     }
@@ -150,18 +146,14 @@ public class Request {
 
     public Request cookies(CookieStore cookieStore){
         Args.notNull(cookieStore, "cookies");
-        if (context == null) {
-            context = HttpClientContext.create();
-        }
+        context = context == null ? HttpClientContext.create() : context;
         context.setCookieStore(cookieStore);
         return this;
     }
 
     public Request cookies(List<Cookie> cookies){
         Args.notNull(cookies, "cookies");
-        if (context == null) {
-            context = HttpClientContext.create();
-        }
+        context = context == null ? HttpClientContext.create() : context;
         CookieStore cookieStore = new BasicCookieStore();
         cookies.forEach(cookieStore::addCookie);
         context.setCookieStore(cookieStore);
