@@ -3,7 +3,12 @@ package xyz.migoo.simplehttp;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
+import org.apache.http.auth.AUTH;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.MalformedChallengeException;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CookieStore;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.*;
@@ -13,7 +18,10 @@ import org.apache.http.cookie.Cookie;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.FileEntity;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HTTP;
@@ -175,8 +183,21 @@ public class Request {
         return this.addHeader(new BasicHeader(name, value));
     }
 
-    public Request proxy(String host, Integer port) {
-        proxy = new HttpHost(host, port);
+    public Request proxy(HttpProxy proxy) throws MalformedChallengeException {
+        if (proxy.hasUsernameAndPassword()) {
+            HttpHost host = new HttpHost(proxy.getHost(), proxy.getPort());
+            BasicScheme proxyAuth = new BasicScheme();
+            proxyAuth.processChallenge(new BasicHeader(AUTH.PROXY_AUTH, "BASIC realm=default"));
+            BasicAuthCache authCache = new BasicAuthCache();
+            authCache.put(host, proxyAuth);
+            CredentialsProvider provider = new BasicCredentialsProvider();
+            provider.setCredentials(new AuthScope(host), new UsernamePasswordCredentials(proxy.getUsername(), proxy.getPassword()));
+            context = context == null ? HttpClientContext.create() : context;
+            context.setAuthCache(authCache);
+            context.setCredentialsProvider(provider);
+        } else {
+            this.proxy = new HttpHost(proxy.getHost(), proxy.getPort());
+        }
         return this;
     }
 
@@ -246,8 +267,9 @@ public class Request {
         return this;
     }
 
-    protected void request(HttpRequest request){
+    protected Request request(HttpRequest request){
         this.request = request;
+        return this;
     }
 
     public String body(){
