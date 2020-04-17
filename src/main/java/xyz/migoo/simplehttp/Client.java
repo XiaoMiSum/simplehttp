@@ -15,6 +15,8 @@ import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
 import javax.net.ssl.SSLContext;
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeUnit;
@@ -74,7 +76,7 @@ public class Client {
         this.httpClient = httpClient;
     }
 
-    public Response execute(Request request) throws HttpException {
+    public Response execute(Request request) throws IOException, HttpException {
         if (this.cookieStore != null) {
             HttpClientContext context = HttpClientContext.create();
             context.setAttribute(HttpClientContext.COOKIE_STORE, this.cookieStore);

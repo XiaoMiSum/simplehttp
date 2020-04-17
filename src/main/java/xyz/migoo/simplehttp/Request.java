@@ -28,6 +28,7 @@ import org.apache.http.protocol.HTTP;
 import org.apache.http.util.Args;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -146,20 +147,20 @@ public class Request {
         return this;
     }
 
-    public Request context(HttpClientContext context){
+    public Request context(HttpClientContext context) {
         Args.notNull(context, "context");
         this.context = context;
         return this;
     }
 
-    public Request cookies(CookieStore cookieStore){
+    public Request cookies(CookieStore cookieStore) {
         Args.notNull(cookieStore, "cookies");
         context = context == null ? HttpClientContext.create() : context;
         context.setCookieStore(cookieStore);
         return this;
     }
 
-    public Request cookies(List<Cookie> cookies){
+    public Request cookies(List<Cookie> cookies) {
         Args.notNull(cookies, "cookies");
         context = context == null ? HttpClientContext.create() : context;
         CookieStore cookieStore = new BasicCookieStore();
@@ -168,18 +169,18 @@ public class Request {
         return this;
     }
 
-    public Request headers(List<Header> headers){
+    public Request headers(List<Header> headers) {
         Args.notNull(headers, "headers");
         headers.forEach(request::addHeader);
         return this;
     }
 
-    public Request addHeader(Header header){
+    public Request addHeader(Header header) {
         request.addHeader(header);
         return this;
     }
 
-    public Request addHeader(String name, String value){
+    public Request addHeader(String name, String value) {
         return this.addHeader(new BasicHeader(name, value));
     }
 
@@ -203,28 +204,28 @@ public class Request {
 
     private void query() throws URISyntaxException {
         if (!HttpPost.METHOD_NAME.equals(request.getMethod())
-                && !HttpPut.METHOD_NAME.equals(request.getMethod()) && form != null){
+                && !HttpPut.METHOD_NAME.equals(request.getMethod()) && form != null) {
             request.setURI(new URIBuilder(request.getURI()).addParameters(form.build()).build());
         }
     }
 
-    public Response execute() throws HttpException {
+    public Response execute() throws IOException, HttpException {
         return execute(Client.CLIENT);
     }
 
-    public Response execute(CloseableHttpClient client) throws HttpException {
-        this.setRequestConfig(client);
+    public Response execute(CloseableHttpClient client) throws IOException, HttpException {
         try {
+            this.setRequestConfig(client);
             this.query();
             return new Response().startTime(System.currentTimeMillis())
                     .response(client.execute(request, context))
                     .context(context).endTime(System.currentTimeMillis());
-        } catch (Exception e) {
-            throw new HttpException("request execute error.", e);
+        } catch (URISyntaxException e) {
+            throw new HttpException("uri parse error", e);
         }
     }
 
-    private void setRequestConfig(CloseableHttpClient client){
+    private void setRequestConfig(CloseableHttpClient client) {
         final RequestConfig.Builder builder;
         if (client instanceof Configurable) {
             builder = RequestConfig.copy(((Configurable) client).getConfig());
@@ -267,36 +268,36 @@ public class Request {
         return this;
     }
 
-    protected Request request(HttpRequest request){
+    protected Request request(HttpRequest request) {
         this.request = request;
         return this;
     }
 
-    public String body(){
+    public String body() {
         return form != null ? form.toString() : body;
     }
 
-    public Header[] headers(){
+    public Header[] headers() {
         return request.getAllHeaders();
     }
 
-    public String proxy(){
+    public String proxy() {
         return proxy == null ? null : proxy.toString();
     }
 
-    public HttpClientContext context(){
+    public HttpClientContext context() {
         return context;
     }
 
-    public String method(){
+    public String method() {
         return request.getMethod();
     }
 
-    public String uri(){
+    public String uri() {
         return request.getURI().toString();
     }
 
-    public String uriNotContainsParam(){
+    public String uriNotContainsParam() {
         String uri = uri();
         return uri.substring(0, uri.contains("?") ? uri.indexOf("?") : uri.length());
     }
