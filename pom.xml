@@ -6,7 +6,7 @@
 
     <groupId>xyz.migoo</groupId>
     <artifactId>simplehttp</artifactId>
-    <version>1.0.3</version>
+    <version>1.0.4</version>
 
     <name>simplehttp</name>
     <description>a simple http client</description>
