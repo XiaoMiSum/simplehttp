@@ -58,7 +58,6 @@ public class HttpRequest extends AbstractHttpMessage implements HttpUriRequest, 
         return false;
     }
 
-
     @Override
     public RequestLine getRequestLine() {
         final ProtocolVersion ver = getProtocolVersion();

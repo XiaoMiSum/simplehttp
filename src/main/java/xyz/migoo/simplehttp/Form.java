@@ -12,15 +12,10 @@ import java.util.List;
  */
 public class Form {
 
-    private List<NameValuePair> data;
+    private final List<NameValuePair> data = new ArrayList<>();
 
     public static Form form() {
         return new Form();
-    }
-
-    private Form() {
-        super();
-        this.data = new ArrayList<>();
     }
 
     public Form add(String name, String value) {

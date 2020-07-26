@@ -7,6 +7,8 @@ import xyz.migoo.simplehttp.Client;
 import xyz.migoo.simplehttp.HttpException;
 import xyz.migoo.simplehttp.Request;
 
+import java.io.IOException;
+
 /**
  * @author xiaomi
  * @date 2019/9/13 11:32
@@ -14,12 +16,12 @@ import xyz.migoo.simplehttp.Request;
 class SimpleHttpTest {
 
     @Test
-    void testGet() throws HttpException {
+    void testGet() throws IOException, HttpException {
         Assertions.assertTrue(Request.get("http://migoo.xyz").execute().text().contains("todos"));
     }
 
     @Test
-    void testPost() throws HttpException {
+    void testPost() throws IOException, HttpException {
         String body = "{\"userName\":\"test\",\"password\":\"123456\",\"sign\": \"123456\"}";
         Assertions.assertTrue(Request.post("http://migoo.xyz/api/login")
                 .bodyJson(body)
@@ -27,7 +29,7 @@ class SimpleHttpTest {
     }
 
     @Test
-    void testPut() throws HttpException {
+    void testPut() throws IOException, HttpException {
         Assertions.assertEquals(200, Request.put("http://migoo.xyz/api/task/schedule/edit")
                 .addHeader("token", "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIxNTU4MTU4NTAyODA3IiwiZXhwIjoxNTY4NDMzMzQ2fQ.ZoxwmAnmb2zJB1Wne8bkPFpKWZKo1c-ggi6nIoT79NE")
                 .bodyJson("{\"id\":\"1558159224394\",\"title\":\"哈哈\",\"locked\":0,\"isDelete\":0}")
@@ -40,12 +42,12 @@ class SimpleHttpTest {
     }
 
     @Test
-    void testDefaultClient() throws HttpException {
+    void testDefaultClient() throws IOException, HttpException {
         Assertions.assertTrue(Client.newClient().execute(Request.get("http://migoo.xyz")).text().contains("todos"));
     }
 
     @Test
-    void testNewClient() throws HttpException {
+    void testNewClient() throws IOException, HttpException {
         Assertions.assertTrue(Client.newClient(HttpClientBuilder.create().build())
                 .execute(Request.get("http://migoo.xyz")).text().contains("todos"));
     }

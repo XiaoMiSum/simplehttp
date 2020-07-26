@@ -18,11 +18,15 @@ public class Response {
     private Long startTime;
     private Long endTime;
     private String text;
+    private int statusCode;
+    private Header[] headers;
     private HttpClientContext context;
-    private CloseableHttpResponse response;
 
-    public Response response(CloseableHttpResponse response) {
-        this.response = response;
+    public Response response(CloseableHttpResponse response) throws IOException {
+        this.statusCode = response.getStatusLine().getStatusCode();
+        this.headers = response.getAllHeaders();
+        this.text = EntityUtils.toString(response.getEntity(), "UTF-8");
+        response.close();
         return this;
     }
 
@@ -42,11 +46,11 @@ public class Response {
     }
 
     public int statusCode() {
-        return response != null ? response.getStatusLine().getStatusCode() : -1;
+        return statusCode;
     }
 
     public Header[] headers() {
-        return response.getAllHeaders();
+        return headers;
     }
 
     public long startTime(){
@@ -66,11 +70,7 @@ public class Response {
     }
 
     public String text() {
-        try {
-           return text = text == null ? EntityUtils.toString(response.getEntity()) : text;
-        } catch (IOException e) {
-            return null;
-        }
+        return text;
     }
 
     public List<Cookie> cookies() {
