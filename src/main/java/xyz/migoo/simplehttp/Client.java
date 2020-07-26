@@ -16,7 +16,6 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeUnit;
@@ -36,7 +35,7 @@ public class Client {
             ssl = SSLConnectionSocketFactory.getSystemSocketFactory();
         } catch (SSLInitializationException ex) {
             try {
-                SSLContext sslcontext = SSLContext.getInstance(SSLConnectionSocketFactory.TLS);
+                SSLContext sslcontext = SSLContext.getInstance(SSLConnectionSocketFactory.SSL);
                 sslcontext.init(null, null, null);
                 ssl = new SSLConnectionSocketFactory(sslcontext);
             } catch (SecurityException | KeyManagementException | NoSuchAlgorithmException ignore) {
@@ -68,7 +67,7 @@ public class Client {
         return new Client(CLIENT);
     }
 
-    private CloseableHttpClient httpClient;
+    private final CloseableHttpClient httpClient;
     private volatile CookieStore cookieStore;
 
     private Client(CloseableHttpClient httpClient) {

@@ -42,7 +42,8 @@ import java.util.Map;
 public class Request {
 
     private HttpRequest request;
-    private Form form;
+    private Form query;
+    private Form data;
     private String body;
     private HttpClientContext context;
     private Boolean useExpectContinue;
@@ -122,28 +123,28 @@ public class Request {
 
     public Request data(Form data) {
         Args.notNull(data, "data");
-        this.form = data;
+        this.data = data;
         this.addHeader("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
-        return this.body(new UrlEncodedFormEntity(form.build(), StandardCharsets.UTF_8));
+        return this.body(new UrlEncodedFormEntity(this.data.build(), StandardCharsets.UTF_8));
     }
 
     public Request data(Map<String, String> data) {
         Args.notNull(data, "data");
-        form = form == null ? Form.form() : form;
-        data.forEach((k, v) -> form.add(k, v));
-        return this.data(form);
+        this.data = this.data == null ? Form.form() : this.data;
+        data.forEach((k, v) -> this.data.add(k, v));
+        return this.data(this.data);
     }
 
     public Request query(Map<String, String> query) {
         Args.notNull(query, "query");
-        form = form == null ? Form.form() : form;
-        query.forEach((k, v) -> form.add(k, v));
-        return this.query(form);
+        this.query = this.query == null ? Form.form() : this.query;
+        query.forEach((k, v) -> data.add(k, v));
+        return this.query(query);
     }
 
-    public Request query(Form data) {
-        Args.notNull(data, "data");
-        this.form = data;
+    public Request query(Form query) {
+        Args.notNull(query, "query");
+        this.query = query;
         return this;
     }
 
@@ -202,13 +203,6 @@ public class Request {
         return this;
     }
 
-    private void query() throws URISyntaxException {
-        if (!HttpPost.METHOD_NAME.equals(request.getMethod())
-                && !HttpPut.METHOD_NAME.equals(request.getMethod()) && form != null) {
-            request.setURI(new URIBuilder(request.getURI()).addParameters(form.build()).build());
-        }
-    }
-
     public Response execute() throws IOException, HttpException {
         return execute(Client.CLIENT);
     }
@@ -216,7 +210,9 @@ public class Request {
     public Response execute(CloseableHttpClient client) throws IOException, HttpException {
         try {
             this.setRequestConfig(client);
-            this.query();
+            if (query != null) {
+                request.setURI(new URIBuilder(request.getURI()).addParameters(query.build()).build());
+            }
             return new Response().startTime(System.currentTimeMillis())
                     .response(client.execute(request, context))
                     .context(context).endTime(System.currentTimeMillis());
@@ -274,7 +270,7 @@ public class Request {
     }
 
     public String body() {
-        return form != null ? form.toString() : body;
+        return data != null ? data.toString() : body;
     }
 
     public Header[] headers() {
