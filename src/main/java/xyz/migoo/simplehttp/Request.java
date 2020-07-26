@@ -270,7 +270,15 @@ public class Request {
     }
 
     public String body() {
-        return data != null ? data.toString() : body;
+        return body;
+    }
+
+    public String data() {
+        return data != null ? data.toString() : "";
+    }
+
+    public String query() {
+        return query != null ? query.toString() : "";
     }
 
     public Header[] headers() {
