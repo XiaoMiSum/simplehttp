@@ -138,8 +138,8 @@ public class Request {
     public Request query(Map<String, String> query) {
         Args.notNull(query, "query");
         this.query = this.query == null ? Form.form() : this.query;
-        query.forEach((k, v) -> data.add(k, v));
-        return this.query(query);
+        query.forEach((k, v) -> this.query.add(k, v));
+        return this.query(this.query);
     }
 
     public Request query(Form query) {
@@ -303,6 +303,6 @@ public class Request {
 
     public String uriNotContainsParam() {
         String uri = uri();
-        return uri.substring(0, uri.contains("?") ? uri.indexOf("?") : uri.length());
+        return uri.contains("?") ? uri.substring(0, uri.indexOf("?")) : uri;
     }
 }
