@@ -270,7 +270,7 @@ public class Request {
     }
 
     public String body() {
-        return body;
+        return body == null ? "" : body;
     }
 
     public String data() {
