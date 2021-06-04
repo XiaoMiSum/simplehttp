@@ -44,7 +44,7 @@
     <properties>
         <jdk.version>1.8</jdk.version>
         <compile.version>3.5.1</compile.version>
-        <http.client.version>4.5.9</http.client.version>
+        <http.client.version>4.5.13</http.client.version>
     </properties>
 
     <dependencies>
