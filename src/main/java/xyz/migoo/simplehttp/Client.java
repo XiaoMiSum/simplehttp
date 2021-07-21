@@ -75,7 +75,7 @@ public class Client {
         this.httpClient = httpClient;
     }
 
-    public Response execute(Request request) throws IOException, HttpException {
+    public Response execute(Request request) throws Exception {
         if (this.cookieStore != null) {
             HttpClientContext context = HttpClientContext.create();
             context.setAttribute(HttpClientContext.COOKIE_STORE, this.cookieStore);

@@ -4,10 +4,8 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import xyz.migoo.simplehttp.Client;
-import xyz.migoo.simplehttp.HttpException;
 import xyz.migoo.simplehttp.Request;
-
-import java.io.IOException;
+import xyz.migoo.simplehttp.RequestJsonEntity;
 
 /**
  * @author xiaomi
@@ -16,39 +14,39 @@ import java.io.IOException;
 class SimpleHttpTest {
 
     @Test
-    void testGet() throws IOException, HttpException {
-        Assertions.assertTrue(Request.get("http://migoo.xyz").execute().text().contains("todos"));
+    void testGet() throws Exception {
+        Assertions.assertTrue(Request.get("http://migoo.xyz").execute().text().contains("migoo-task"));
     }
 
     @Test
-    void testPost() throws IOException, HttpException {
+    void testPost() throws Exception {
         String body = "{\"userName\":\"test\",\"password\":\"123456\",\"sign\": \"123456\"}";
         Assertions.assertTrue(Request.post("http://migoo.xyz/api/login")
-                .bodyJson(body)
+                .body(new RequestJsonEntity(body))
                 .execute().text().contains("411"));
     }
 
     @Test
-    void testPut() throws IOException, HttpException {
+    void testPut() throws Exception {
         Assertions.assertEquals(200, Request.put("http://migoo.xyz/api/task/schedule/edit")
                 .addHeader("token", "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIxNTU4MTU4NTAyODA3IiwiZXhwIjoxNTY4NDMzMzQ2fQ.ZoxwmAnmb2zJB1Wne8bkPFpKWZKo1c-ggi6nIoT79NE")
-                .bodyJson("{\"id\":\"1558159224394\",\"title\":\"哈哈\",\"locked\":0,\"isDelete\":0}")
+                .body(new RequestJsonEntity("{\"id\":\"1558159224394\",\"title\":\"哈哈\",\"locked\":0,\"isDelete\":0}"))
                 .execute().statusCode());
     }
 
-    @Test()
+    @Test
     void testException() {
-        Assertions.assertThrows(HttpException.class, () -> Request.put("http://127.0.0.1:8080").execute());
+        Assertions.assertThrows(Exception.class, () -> Request.put("http://127.0.0.1:8080").execute());
     }
 
     @Test
-    void testDefaultClient() throws IOException, HttpException {
-        Assertions.assertTrue(Client.newClient().execute(Request.get("http://migoo.xyz")).text().contains("todos"));
+    void testDefaultClient() throws Exception {
+        Assertions.assertTrue(Client.newClient().execute(Request.get("http://migoo.xyz")).text().contains("migoo-task"));
     }
 
     @Test
-    void testNewClient() throws IOException, HttpException {
+    void testNewClient() throws Exception {
         Assertions.assertTrue(Client.newClient(HttpClientBuilder.create().build())
-                .execute(Request.get("http://migoo.xyz")).text().contains("todos"));
+                .execute(Request.get("http://migoo.xyz")).text().contains("migoo-task"));
     }
 }

@@ -18,7 +18,7 @@
 <dependency>
     <groupId>xyz.migoo</groupId>
     <artifactId>simplehttp</artifactId>
-    <version>最新版本</version>
+    <version>${version}</version>
 </dependency>
 ```
 

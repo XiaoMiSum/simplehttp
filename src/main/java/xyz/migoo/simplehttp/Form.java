@@ -5,6 +5,7 @@ import org.apache.http.message.BasicNameValuePair;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author xiaomi
@@ -18,8 +19,17 @@ public class Form {
         return new Form();
     }
 
+    public static Form form(Map<String, Object> data) {
+        return new Form().add(data);
+    }
+
     public Form add(String name, String value) {
         this.data.add(new BasicNameValuePair(name, value));
+        return this;
+    }
+
+    public Form add(Map<String, Object> data) {
+        data.forEach((key, value) -> this.add(key, value == null ? "" : String.valueOf(value)));
         return this;
     }
 

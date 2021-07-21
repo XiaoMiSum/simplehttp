@@ -1,7 +1,6 @@
 package xyz.migoo.simplehttp;
 
 import org.apache.http.Header;
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AUTH;
 import org.apache.http.auth.AuthScope;
@@ -10,14 +9,10 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.*;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.cookie.Cookie;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.FileEntity;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.BasicCookieStore;
@@ -27,13 +22,8 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.Args;
 
-import java.io.File;
-import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author xiaomi
@@ -43,7 +33,6 @@ public class Request {
 
     private HttpRequest request;
     private Form query;
-    private Form data;
     private String body;
     private HttpClientContext context;
     private Boolean useExpectContinue;
@@ -92,54 +81,10 @@ public class Request {
         this.request = request;
     }
 
-    public Request body(HttpEntity body) {
-        ((EntityEnclosingHttpRequest) request).setEntity(body);
+    public Request body(RequestEntity entity) {
+        this.body = entity.getContent();
+        ((EntityEnclosingHttpRequest) request).setEntity(entity.getEntity());
         return this;
-    }
-
-    public Request bodyString(String body) {
-        Args.notBlank(body, "body");
-        this.body = body;
-        return this.body(new StringEntity(body, StandardCharsets.UTF_8));
-    }
-
-    public Request bodyJson(String body) {
-        Args.notBlank(body, "body");
-        this.body = body;
-        this.addHeader("Content-Type", "application/json; charset=utf-8");
-        return this.body(new StringEntity(body, StandardCharsets.UTF_8));
-    }
-
-    public Request bodyFile(String file) {
-        Args.notBlank(file, "file");
-        return this.bodyFile(new File(file));
-    }
-
-    public Request bodyFile(File file) {
-        Args.notNull(file, "file");
-        this.body = file.getPath();
-        return this.body(new FileEntity(file, ContentType.DEFAULT_BINARY));
-    }
-
-    public Request data(Form data) {
-        Args.notNull(data, "data");
-        this.data = data;
-        this.addHeader("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
-        return this.body(new UrlEncodedFormEntity(this.data.build(), StandardCharsets.UTF_8));
-    }
-
-    public Request data(Map<String, String> data) {
-        Args.notNull(data, "data");
-        this.data = this.data == null ? Form.form() : this.data;
-        data.forEach((k, v) -> this.data.add(k, v));
-        return this.data(this.data);
-    }
-
-    public Request query(Map<String, String> query) {
-        Args.notNull(query, "query");
-        this.query = this.query == null ? Form.form() : this.query;
-        query.forEach((k, v) -> this.query.add(k, v));
-        return this.query(this.query);
     }
 
     public Request query(Form query) {
@@ -203,22 +148,18 @@ public class Request {
         return this;
     }
 
-    public Response execute() throws IOException, HttpException {
+    public Response execute() throws Exception {
         return execute(Client.CLIENT);
     }
 
-    public Response execute(CloseableHttpClient client) throws IOException, HttpException {
-        try {
-            this.setRequestConfig(client);
-            if (query != null) {
-                request.setURI(new URIBuilder(request.getURI()).addParameters(query.build()).build());
-            }
-            return new Response().startTime(System.currentTimeMillis())
-                    .response(client.execute(request, context))
-                    .context(context).endTime(System.currentTimeMillis());
-        } catch (URISyntaxException e) {
-            throw new HttpException("uri parse error", e);
+    public Response execute(CloseableHttpClient client) throws Exception {
+        this.setRequestConfig(client);
+        if (query != null && query.build().size() > 0) {
+            request.setURI(new URIBuilder(request.getURI()).addParameters(query.build()).build());
         }
+        return new Response().startTime(System.currentTimeMillis())
+                .response(client.execute(request, context))
+                .context(context).endTime(System.currentTimeMillis());
     }
 
     private void setRequestConfig(CloseableHttpClient client) {
@@ -273,12 +214,8 @@ public class Request {
         return body == null ? "" : body;
     }
 
-    public String data() {
-        return data != null ? data.toString() : "";
-    }
-
     public String query() {
-        return query != null ? query.toString() : "";
+        return query == null ? "" : query.toString();
     }
 
     public Header[] headers() {
