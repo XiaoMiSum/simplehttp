@@ -10,9 +10,11 @@ import org.apache.hc.client5.http.cookie.Cookie;
 import org.apache.hc.client5.http.cookie.CookieStore;
 import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
 import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.HttpHost;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.hc.core5.net.URIBuilder;
 import org.apache.hc.core5.util.Args;
@@ -36,46 +38,50 @@ public class Request {
     private Boolean useExpectContinue;
     private Integer socketTimeout;
     private Integer connectTimeout;
+    private Boolean redirectsEnabled;
     private HttpHost proxy;
 
+    public static Request create(String method, String url) {
+        return new Request(method, url);
+    }
+
     public static Request get(String url) {
-        return new Request(new HttpRequest(HttpGet.METHOD_NAME, URI.create(url)));
+        return new Request(HttpGet.METHOD_NAME, url);
     }
 
     public static Request post(String url) {
-        return new Request(new HttpRequest(HttpPost.METHOD_NAME, URI.create(url)));
+        return new Request(HttpPost.METHOD_NAME, url);
     }
 
     public static Request put(String url) {
-        return new Request(new HttpRequest(HttpPut.METHOD_NAME, URI.create(url)));
+        return new Request(HttpPut.METHOD_NAME, url);
     }
 
     public static Request delete(String url) {
-        return new Request(new HttpRequest(HttpDelete.METHOD_NAME, URI.create(url)));
+        return new Request(HttpDelete.METHOD_NAME, url);
     }
 
     public static Request head(String url) {
-        return new Request(new HttpRequest(HttpHead.METHOD_NAME, URI.create(url)));
+        return new Request(HttpHead.METHOD_NAME, url);
     }
 
     public static Request patch(String url) {
-        return new Request(new HttpRequest(HttpPatch.METHOD_NAME, URI.create(url)));
+        return new Request(HttpPatch.METHOD_NAME, url);
     }
 
     public static Request trace(String url) {
-        return new Request(new HttpRequest(HttpTrace.METHOD_NAME, URI.create(url)));
+        return new Request(HttpTrace.METHOD_NAME, url);
     }
 
     public static Request options(String url) {
-        return new Request(new HttpRequest(HttpOptions.METHOD_NAME, URI.create(url)));
+        return new Request(HttpOptions.METHOD_NAME, url);
     }
 
-    protected Request() {
-        super();
+    protected Request(String method, String url) {
+        this(new HttpRequest(method, URI.create(url)));
     }
 
     private Request(HttpRequest request) {
-        super();
         this.request = request;
     }
 
@@ -86,7 +92,7 @@ public class Request {
     }
 
     public Request query(Form query) {
-        this.query = Args.notNull(query, "query");
+        this.query = query;
         return this;
     }
 
@@ -143,9 +149,12 @@ public class Request {
         if (query != null && query.build().size() > 0) {
             request.setUri(new URIBuilder(request.getUri()).addParameters(query.build()).build());
         }
-        return new Response().startTime(System.currentTimeMillis())
-                .response(client.execute(request, context))
-                .context(context).endTime(System.currentTimeMillis());
+        final Response response = new Response();
+        try (CloseableHttpResponse httpResponse = client.execute(request, context)) {
+            response.response(httpResponse).context(context);
+            EntityUtils.consume(httpResponse.getEntity());
+        }
+        return response;
     }
 
     private void setRequestConfig(CloseableHttpClient client) {
@@ -167,8 +176,10 @@ public class Request {
         if (this.proxy != null) {
             builder.setProxy(this.proxy);
         }
-        final RequestConfig config = builder.setRedirectsEnabled(true).build();
-        this.request.setConfig(config);
+        if (this.redirectsEnabled != null) {
+            builder.setRedirectsEnabled(true);
+        }
+        this.request.setConfig(builder.build());
     }
 
     public Request useExpectContinue() {
@@ -227,5 +238,13 @@ public class Request {
     public String uriNotContainsParam() {
         String uri = uri();
         return uri.contains("?") ? uri.substring(0, uri.indexOf("?")) : uri;
+    }
+
+    public Boolean redirectsEnabled() {
+        return redirectsEnabled;
+    }
+
+    public void redirectsEnabled(Boolean redirectsEnabled) {
+        this.redirectsEnabled = redirectsEnabled;
     }
 }

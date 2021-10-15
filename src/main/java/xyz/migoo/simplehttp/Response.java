@@ -14,33 +14,27 @@ import java.util.List;
  */
 public class Response {
 
-    private Long startTime;
+    private final Long startTime;
     private Long endTime;
     private String text;
     private int statusCode;
     private Header[] headers;
     private HttpClientContext context;
 
+    public Response() {
+        this.startTime = System.currentTimeMillis();
+    }
+
     public Response response(CloseableHttpResponse response) throws Exception {
+        this.endTime = System.currentTimeMillis();
         this.statusCode = response.getCode();
         this.headers = response.getHeaders();
         this.text = EntityUtils.toString(response.getEntity(), "UTF-8");
-        response.close();
         return this;
     }
 
     Response context(HttpClientContext context) {
         this.context = context;
-        return this;
-    }
-
-    Response startTime(long startTime) {
-        this.startTime = startTime;
-        return this;
-    }
-
-    Response endTime(long endTime) {
-        this.endTime = endTime;
         return this;
     }
 
