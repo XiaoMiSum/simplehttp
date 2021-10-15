@@ -1,12 +1,12 @@
 package xyz.migoo.simplehttp;
 
-import org.apache.http.HttpEntity;
+import org.apache.hc.core5.http.HttpEntity;
 
 /**
  * @author xiaomi
  * Created in 2021/7/21 19:50
  */
-public abstract class RequestEntity {
+public abstract class BaseRequestEntity {
 
     private String content;
 

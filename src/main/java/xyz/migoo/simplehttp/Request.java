@@ -1,29 +1,27 @@
 package xyz.migoo.simplehttp;
 
-import org.apache.http.Header;
-import org.apache.http.HttpHost;
-import org.apache.http.auth.AUTH;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.MalformedChallengeException;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CookieStore;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.*;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.auth.BasicScheme;
-import org.apache.http.impl.client.BasicAuthCache;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.message.BasicHeader;
-import org.apache.http.protocol.HTTP;
-import org.apache.http.util.Args;
+import org.apache.hc.client5.http.auth.AuthScope;
+import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
+import org.apache.hc.client5.http.classic.methods.*;
+import org.apache.hc.client5.http.config.Configurable;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.cookie.BasicCookieStore;
+import org.apache.hc.client5.http.cookie.Cookie;
+import org.apache.hc.client5.http.cookie.CookieStore;
+import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.protocol.HttpClientContext;
+import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.HttpHost;
+import org.apache.hc.core5.http.message.BasicHeader;
+import org.apache.hc.core5.net.URIBuilder;
+import org.apache.hc.core5.util.Args;
+import org.apache.hc.core5.util.Timeout;
 
 import java.net.URI;
 import java.util.List;
+
+import static org.apache.hc.core5.http.HttpHeaders.USER_AGENT;
 
 /**
  * @author xiaomi
@@ -45,11 +43,11 @@ public class Request {
     }
 
     public static Request post(String url) {
-        return new Request(new EntityEnclosingHttpRequest(HttpPost.METHOD_NAME, URI.create(url)));
+        return new Request(new HttpRequest(HttpPost.METHOD_NAME, URI.create(url)));
     }
 
     public static Request put(String url) {
-        return new Request(new EntityEnclosingHttpRequest(HttpPut.METHOD_NAME, URI.create(url)));
+        return new Request(new HttpRequest(HttpPut.METHOD_NAME, URI.create(url)));
     }
 
     public static Request delete(String url) {
@@ -76,48 +74,43 @@ public class Request {
         super();
     }
 
-    protected Request(HttpRequest request) {
+    private Request(HttpRequest request) {
         super();
         this.request = request;
     }
 
-    public Request body(RequestEntity entity) {
+    public Request body(BaseRequestEntity entity) {
         this.body = entity.getContent();
-        ((EntityEnclosingHttpRequest) request).setEntity(entity.getEntity());
+        request.setEntity(entity.getEntity());
         return this;
     }
 
     public Request query(Form query) {
-        Args.notNull(query, "query");
-        this.query = query;
+        this.query = Args.notNull(query, "query");
         return this;
     }
 
     public Request context(HttpClientContext context) {
-        Args.notNull(context, "context");
-        this.context = context;
+        this.context = Args.notNull(context, "context");
         return this;
     }
 
     public Request cookies(CookieStore cookieStore) {
-        Args.notNull(cookieStore, "cookies");
         context = context == null ? HttpClientContext.create() : context;
-        context.setCookieStore(cookieStore);
+        context.setCookieStore(Args.notNull(cookieStore, "cookies"));
         return this;
     }
 
     public Request cookies(List<Cookie> cookies) {
-        Args.notNull(cookies, "cookies");
         context = context == null ? HttpClientContext.create() : context;
         CookieStore cookieStore = new BasicCookieStore();
-        cookies.forEach(cookieStore::addCookie);
+        Args.notNull(cookies, "cookies").forEach(cookieStore::addCookie);
         context.setCookieStore(cookieStore);
         return this;
     }
 
     public Request headers(List<Header> headers) {
-        Args.notNull(headers, "headers");
-        headers.forEach(request::addHeader);
+        Args.notNull(headers, "headers").forEach(request::addHeader);
         return this;
     }
 
@@ -130,20 +123,13 @@ public class Request {
         return this.addHeader(new BasicHeader(name, value));
     }
 
-    public Request proxy(HttpProxy proxy) throws MalformedChallengeException {
+    public Request proxy(HttpProxy proxy) {
+        this.proxy = new HttpHost(proxy.getScheme(), proxy.getHost(), proxy.getPort());
         if (proxy.hasUsernameAndPassword()) {
-            HttpHost host = new HttpHost(proxy.getHost(), proxy.getPort());
-            BasicScheme proxyAuth = new BasicScheme();
-            proxyAuth.processChallenge(new BasicHeader(AUTH.PROXY_AUTH, "BASIC realm=default"));
-            BasicAuthCache authCache = new BasicAuthCache();
-            authCache.put(host, proxyAuth);
-            CredentialsProvider provider = new BasicCredentialsProvider();
-            provider.setCredentials(new AuthScope(host), new UsernamePasswordCredentials(proxy.getUsername(), proxy.getPassword()));
+            BasicCredentialsProvider provider = new BasicCredentialsProvider();
+            provider.setCredentials(new AuthScope(this.proxy), new UsernamePasswordCredentials(proxy.getUsername(), proxy.getPassword().toCharArray()));
             context = context == null ? HttpClientContext.create() : context;
-            context.setAuthCache(authCache);
             context.setCredentialsProvider(provider);
-        } else {
-            this.proxy = new HttpHost(proxy.getHost(), proxy.getPort());
         }
         return this;
     }
@@ -155,7 +141,7 @@ public class Request {
     public Response execute(CloseableHttpClient client) throws Exception {
         this.setRequestConfig(client);
         if (query != null && query.build().size() > 0) {
-            request.setURI(new URIBuilder(request.getURI()).addParameters(query.build()).build());
+            request.setUri(new URIBuilder(request.getUri()).addParameters(query.build()).build());
         }
         return new Response().startTime(System.currentTimeMillis())
                 .response(client.execute(request, context))
@@ -173,10 +159,10 @@ public class Request {
             builder.setExpectContinueEnabled(this.useExpectContinue);
         }
         if (this.socketTimeout != null) {
-            builder.setSocketTimeout(this.socketTimeout * 1000);
+            builder.setConnectionRequestTimeout(Timeout.ofSeconds(socketTimeout));
         }
         if (this.connectTimeout != null) {
-            builder.setConnectTimeout(this.connectTimeout * 1000);
+            builder.setConnectTimeout(Timeout.ofSeconds(connectTimeout));
         }
         if (this.proxy != null) {
             builder.setProxy(this.proxy);
@@ -191,7 +177,7 @@ public class Request {
     }
 
     public Request userAgent(final String agent) {
-        this.request.setHeader(HTTP.USER_AGENT, agent);
+        this.request.setHeader(USER_AGENT, agent);
         return this;
     }
 
@@ -219,7 +205,7 @@ public class Request {
     }
 
     public Header[] headers() {
-        return request.getAllHeaders();
+        return request.getHeaders();
     }
 
     public String proxy() {
@@ -235,7 +221,7 @@ public class Request {
     }
 
     public String uri() {
-        return request.getURI().toString();
+        return request.getRequestUri();
     }
 
     public String uriNotContainsParam() {

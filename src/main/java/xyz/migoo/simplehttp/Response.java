@@ -1,12 +1,11 @@
 package xyz.migoo.simplehttp;
 
-import org.apache.http.Header;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.util.EntityUtils;
+import org.apache.hc.client5.http.cookie.Cookie;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.protocol.HttpClientContext;
+import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -22,9 +21,9 @@ public class Response {
     private Header[] headers;
     private HttpClientContext context;
 
-    public Response response(CloseableHttpResponse response) throws IOException {
-        this.statusCode = response.getStatusLine().getStatusCode();
-        this.headers = response.getAllHeaders();
+    public Response response(CloseableHttpResponse response) throws Exception {
+        this.statusCode = response.getCode();
+        this.headers = response.getHeaders();
         this.text = EntityUtils.toString(response.getEntity(), "UTF-8");
         response.close();
         return this;
@@ -53,11 +52,11 @@ public class Response {
         return headers;
     }
 
-    public long startTime(){
+    public long startTime() {
         return startTime;
     }
 
-    public long endTime(){
+    public long endTime() {
         return endTime;
     }
 

@@ -1,21 +1,18 @@
 package xyz.migoo.simplehttp;
 
-import org.apache.http.client.CookieStore;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.config.Registry;
-import org.apache.http.config.RegistryBuilder;
-import org.apache.http.conn.socket.ConnectionSocketFactory;
-import org.apache.http.conn.socket.LayeredConnectionSocketFactory;
-import org.apache.http.conn.socket.PlainConnectionSocketFactory;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.SSLInitializationException;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.LaxRedirectStrategy;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.cookie.CookieStore;
+import org.apache.hc.client5.http.impl.DefaultRedirectStrategy;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.protocol.HttpClientContext;
+import org.apache.hc.client5.http.socket.LayeredConnectionSocketFactory;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
+import org.apache.hc.core5.ssl.SSLInitializationException;
+import org.apache.hc.core5.util.TimeValue;
 
 import javax.net.ssl.SSLContext;
-import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeUnit;
@@ -35,28 +32,27 @@ public class Client {
             ssl = SSLConnectionSocketFactory.getSystemSocketFactory();
         } catch (SSLInitializationException ex) {
             try {
-                SSLContext sslcontext = SSLContext.getInstance(SSLConnectionSocketFactory.SSL);
+                SSLContext sslcontext = SSLContext.getInstance("SSL");
                 sslcontext.init(null, null, null);
                 ssl = new SSLConnectionSocketFactory(sslcontext);
             } catch (SecurityException | KeyManagementException | NoSuchAlgorithmException ignore) {
             }
         }
-        Registry<ConnectionSocketFactory> sfr = RegistryBuilder.<ConnectionSocketFactory>create()
-                .register("http", PlainConnectionSocketFactory.getSocketFactory())
-                .register("https", ssl != null ? ssl : SSLConnectionSocketFactory.getSocketFactory())
+
+        POOLING_HTTP_CLIENT_CONNECTION_MANAGER = PoolingHttpClientConnectionManagerBuilder.create()
+                .setSSLSocketFactory(ssl != null ? ssl : SSLConnectionSocketFactory.getSocketFactory())
+                .setMaxConnPerRoute(2)
+                .setMaxConnTotal(20)
+                .setValidateAfterInactivity(TimeValue.ofSeconds(1))
                 .build();
-        POOLING_HTTP_CLIENT_CONNECTION_MANAGER = new PoolingHttpClientConnectionManager(sfr);
-        POOLING_HTTP_CLIENT_CONNECTION_MANAGER.setDefaultMaxPerRoute(2);
-        POOLING_HTTP_CLIENT_CONNECTION_MANAGER.setMaxTotal(20);
-        POOLING_HTTP_CLIENT_CONNECTION_MANAGER.setValidateAfterInactivity(1000);
-        CLIENT = HttpClientBuilder.create()
-                .setRedirectStrategy(new LaxRedirectStrategy())
+        CLIENT = HttpClients.custom()
+                .setRedirectStrategy(new DefaultRedirectStrategy())
                 .setConnectionManager(POOLING_HTTP_CLIENT_CONNECTION_MANAGER)
                 .build();
     }
 
     public static void closeIdleConnections() {
-        POOLING_HTTP_CLIENT_CONNECTION_MANAGER.closeIdleConnections(0, TimeUnit.MICROSECONDS);
+        POOLING_HTTP_CLIENT_CONNECTION_MANAGER.closeIdle(TimeValue.of(0, TimeUnit.MILLISECONDS));
     }
 
     public static Client newClient(CloseableHttpClient httpClient) {

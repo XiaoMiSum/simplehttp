@@ -1,6 +1,6 @@
 package xyz.migoo.simplehttp.test;
 
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import xyz.migoo.simplehttp.Client;

@@ -1,7 +1,7 @@
 package xyz.migoo.simplehttp;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.message.BasicNameValuePair;
+import org.apache.hc.core5.http.NameValuePair;
+import org.apache.hc.core5.http.message.BasicNameValuePair;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +41,7 @@ public class Form {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("{");
-        for (int i = 0; i < data.size(); i++){
+        for (int i = 0; i < data.size(); i++) {
             NameValuePair pair = data.get(i);
             sb.append("\"").append(pair.getName()).append("\": ");
             if (pair.getValue() != null) {
@@ -49,7 +49,7 @@ public class Form {
             } else {
                 sb.append(pair.getValue());
             }
-            if (i < data.size() -1){
+            if (i < data.size() - 1) {
                 sb.append(",");
             }
         }

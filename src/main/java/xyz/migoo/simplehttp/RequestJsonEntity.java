@@ -1,39 +1,39 @@
 package xyz.migoo.simplehttp;
 
-import org.apache.http.entity.StringEntity;
+import org.apache.hc.core5.http.io.entity.StringEntity;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.http.entity.ContentType.APPLICATION_JSON;
+import static org.apache.hc.core5.http.ContentType.APPLICATION_JSON;
 
 /**
  * @author xiaomi
  * Created in 2021/7/21 19:52
  */
-public class RequestJsonEntity extends RequestEntity {
+public class RequestJsonEntity extends BaseRequestEntity {
 
     public RequestJsonEntity(String json) {
         this.setContent(json);
         this.setEntity(new StringEntity(json, APPLICATION_JSON));
     }
 
-    public RequestJsonEntity(Map<String, Object> body) {
+    public RequestJsonEntity(Map<?, ?> body) {
         this.setContent(toJson(body));
         this.setEntity(new StringEntity(this.getContent(), StandardCharsets.UTF_8));
     }
 
-    private String toJson(Map<String, Object> body) {
+    private String toJson(Map<?, ?> body) {
         StringBuilder sb = new StringBuilder("{");
-        for (String key : body.keySet()) {
+        for (Object key : body.keySet()) {
             Object value = body.get(key);
             if (sb.length() > 1) {
                 sb.append(",");
             }
             sb.append("\"").append(key).append("\": ");
             if (value instanceof Map) {
-                sb.append(toJson((Map<String, Object>) value));
+                sb.append(toJson((Map<?, ?>) value));
             } else if (value instanceof List) {
                 sb.append(listToString((List<?>) value));
             } else {
@@ -50,7 +50,7 @@ public class RequestJsonEntity extends RequestEntity {
                 sb.append(",");
             }
             if (obj instanceof Map) {
-                sb.append(toJson((Map<String, Object>) obj));
+                sb.append(toJson((Map<?, ?>) obj));
             } else if (obj instanceof List) {
                 sb.append(listToString((List<?>) obj));
             } else {

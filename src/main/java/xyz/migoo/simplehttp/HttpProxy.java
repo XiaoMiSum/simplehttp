@@ -6,6 +6,8 @@ package xyz.migoo.simplehttp;
  */
 public class HttpProxy {
 
+    private String scheme;
+
     private String host;
 
     private Integer port;
@@ -18,15 +20,27 @@ public class HttpProxy {
     }
 
     public HttpProxy(String host, Integer port) {
-        this.host = host;
-        this.port = port;
+        this(null, host, port);
     }
 
-    public HttpProxy(String host, Integer port, String username, String password) {
+    public HttpProxy(String scheme, String host, Integer port) {
+        this(scheme, host, port, null, null);
+    }
+
+    public HttpProxy(String scheme, String host, Integer port, String username, String password) {
+        this.scheme = scheme;
         this.host = host;
         this.port = port;
         this.username = username;
         this.password = password;
+    }
+
+    public String getScheme() {
+        return scheme;
+    }
+
+    public void setScheme(String scheme) {
+        this.scheme = scheme;
     }
 
     public String getHost() {
@@ -61,7 +75,7 @@ public class HttpProxy {
         this.password = password;
     }
 
-    public boolean hasUsernameAndPassword(){
+    public boolean hasUsernameAndPassword() {
         return username != null && !username.isEmpty() && password != null && !password.isEmpty();
     }
 }
