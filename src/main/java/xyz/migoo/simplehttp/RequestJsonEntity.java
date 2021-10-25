@@ -2,7 +2,6 @@ package xyz.migoo.simplehttp;
 
 import org.apache.hc.core5.http.io.entity.StringEntity;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -21,7 +20,7 @@ public class RequestJsonEntity extends BaseRequestEntity {
 
     public RequestJsonEntity(Map<?, ?> body) {
         this.setContent(toJson(body));
-        this.setEntity(new StringEntity(this.getContent(), StandardCharsets.UTF_8));
+        this.setEntity(new StringEntity(this.getContent(), APPLICATION_JSON));
     }
 
     private String toJson(Map<?, ?> body) {
