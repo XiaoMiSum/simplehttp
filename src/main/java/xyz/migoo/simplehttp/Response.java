@@ -67,6 +67,6 @@ public class Response {
     }
 
     public List<Cookie> cookies() {
-        return context != null ? context.getCookieStore().getCookies() : null;
+        return context != null && context.getCookieStore() != null ? context.getCookieStore().getCookies() : null;
     }
 }

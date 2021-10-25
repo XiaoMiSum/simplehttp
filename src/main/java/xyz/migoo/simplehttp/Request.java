@@ -88,6 +88,7 @@ public class Request {
     public Request body(BaseRequestEntity entity) {
         this.body = entity.getContent();
         request.setEntity(entity.getEntity());
+        request.addHeader("Content-Type", entity.getEntity().getContentType());
         return this;
     }
 
