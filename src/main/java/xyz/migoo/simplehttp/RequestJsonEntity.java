@@ -1,5 +1,6 @@
 package xyz.migoo.simplehttp;
 
+import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 
 import java.util.List;
@@ -14,13 +15,17 @@ import static org.apache.hc.core5.http.ContentType.APPLICATION_JSON;
 public class RequestJsonEntity extends BaseRequestEntity {
 
     public RequestJsonEntity(String json) {
-        this.setContent(json);
-        this.setEntity(new StringEntity(json, APPLICATION_JSON));
+        this(json, APPLICATION_JSON);
     }
 
     public RequestJsonEntity(Map<?, ?> body) {
         this.setContent(toJson(body));
         this.setEntity(new StringEntity(this.getContent(), APPLICATION_JSON));
+    }
+
+    public RequestJsonEntity(String content, ContentType contentType) {
+        this.setContent(content);
+        this.setEntity(new StringEntity(content, contentType));
     }
 
     private String toJson(Map<?, ?> body) {
