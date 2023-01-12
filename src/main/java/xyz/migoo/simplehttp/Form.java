@@ -15,11 +15,19 @@ public class Form {
 
     private final List<NameValuePair> data = new ArrayList<>();
 
-    public static Form form() {
+    private Form() {
+
+    }
+
+    private Form(Map<String, Object> data) {
+        add(data);
+    }
+
+    public static Form create() {
         return new Form();
     }
 
-    public static Form form(Map<String, Object> data) {
+    public static Form create(Map<String, Object> data) {
         return new Form().add(data);
     }
 

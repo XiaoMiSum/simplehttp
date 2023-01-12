@@ -3,6 +3,7 @@ package xyz.migoo.simplehttp;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -12,23 +13,21 @@ import static org.apache.hc.core5.http.ContentType.APPLICATION_JSON;
  * @author xiaomi
  * Created in 2021/7/21 19:52
  */
-public class RequestJsonEntity extends BaseRequestEntity {
+public class RequestJsonEntity extends RequestEntity {
 
     public RequestJsonEntity(String json) {
         this(json, APPLICATION_JSON);
     }
 
     public RequestJsonEntity(Map<?, ?> body) {
-        this.setContent(toJson(body));
-        this.setEntity(new StringEntity(this.getContent(), APPLICATION_JSON));
+        this(toJson(body));
     }
 
     public RequestJsonEntity(String content, ContentType contentType) {
-        this.setContent(content);
-        this.setEntity(new StringEntity(content, contentType));
+        super(new StringEntity(content, contentType), content.getBytes(StandardCharsets.UTF_8));
     }
 
-    private String toJson(Map<?, ?> body) {
+    private static String toJson(Map<?, ?> body) {
         StringBuilder sb = new StringBuilder("{");
         for (Object key : body.keySet()) {
             Object value = body.get(key);
@@ -39,7 +38,7 @@ public class RequestJsonEntity extends BaseRequestEntity {
             if (value instanceof Map) {
                 sb.append(toJson((Map<?, ?>) value));
             } else if (value instanceof List) {
-                sb.append(listToString((List<?>) value));
+                sb.append(toJson((List<?>) value));
             } else {
                 sb.append(getValue(value));
             }
@@ -47,7 +46,7 @@ public class RequestJsonEntity extends BaseRequestEntity {
         return sb.append("}").toString();
     }
 
-    private String listToString(List<?> list) {
+    private static String toJson(List<?> list) {
         StringBuilder sb = new StringBuilder("[");
         for (Object obj : list) {
             if (sb.length() > 1) {
@@ -56,7 +55,7 @@ public class RequestJsonEntity extends BaseRequestEntity {
             if (obj instanceof Map) {
                 sb.append(toJson((Map<?, ?>) obj));
             } else if (obj instanceof List) {
-                sb.append(listToString((List<?>) obj));
+                sb.append(toJson((List<?>) obj));
             } else {
                 sb.append(getValue(obj));
             }
@@ -64,7 +63,7 @@ public class RequestJsonEntity extends BaseRequestEntity {
         return sb.append("]").toString();
     }
 
-    public Object getValue(Object value) {
+    private static Object getValue(Object value) {
         return value == null || value instanceof Number ? value : "\"" + value + "\"";
     }
 }

@@ -33,13 +33,22 @@ public class Request {
 
     private HttpRequest request;
     private Form query;
-    private String body;
+    private byte[] body;
     private HttpClientContext context;
     private Boolean useExpectContinue;
     private Integer socketTimeout;
     private Integer connectTimeout;
+    private Integer readTimeout;
     private Boolean redirectsEnabled;
     private HttpHost proxy;
+
+    protected Request(String method, String url) {
+        this(new HttpRequest(method, URI.create(url)));
+    }
+
+    private Request(HttpRequest request) {
+        this.request = request;
+    }
 
     public static Request create(String method, String url) {
         return new Request(method, url);
@@ -77,15 +86,7 @@ public class Request {
         return new Request(HttpOptions.METHOD_NAME, url);
     }
 
-    protected Request(String method, String url) {
-        this(new HttpRequest(method, URI.create(url)));
-    }
-
-    private Request(HttpRequest request) {
-        this.request = request;
-    }
-
-    public Request body(BaseRequestEntity entity) {
+    public Request body(RequestEntity entity) {
         this.body = entity.getContent();
         request.setEntity(entity.getEntity());
         request.addHeader("Content-Type", entity.getEntity().getContentType());
@@ -170,9 +171,13 @@ public class Request {
         }
         if (this.socketTimeout != null) {
             builder.setConnectionRequestTimeout(Timeout.ofSeconds(socketTimeout));
+
         }
         if (this.connectTimeout != null) {
             builder.setConnectTimeout(Timeout.ofSeconds(connectTimeout));
+        }
+        if (this.readTimeout != null) {
+            builder.setResponseTimeout(Timeout.ofSeconds(readTimeout));
         }
         if (this.proxy != null) {
             builder.setProxy(this.proxy);
@@ -203,13 +208,18 @@ public class Request {
         return this;
     }
 
+    public Request readTimeout(final int timeout) {
+        this.readTimeout = timeout;
+        return this;
+    }
+
     protected Request request(HttpRequest request) {
         this.request = request;
         return this;
     }
 
-    public String body() {
-        return body == null ? "" : body;
+    public byte[] body() {
+        return body == null ? new byte[]{} : body;
     }
 
     public String query() {
@@ -233,12 +243,9 @@ public class Request {
     }
 
     public String uri() {
-        return request.getRequestUri();
-    }
-
-    public String uriNotContainsParam() {
-        String uri = uri();
-        return uri.contains("?") ? uri.substring(0, uri.indexOf("?")) : uri;
+        return request.getScheme() + "://" + request.getAuthority().getHostName()
+                + (request.getAuthority().getPort() > -1 ? request.getAuthority().getPort() : "")
+                + request.getRequestUri();
     }
 
     public Boolean redirectsEnabled() {

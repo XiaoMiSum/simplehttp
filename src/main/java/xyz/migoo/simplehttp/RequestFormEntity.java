@@ -9,17 +9,13 @@ import java.util.Map;
  * @author xiaomi
  * Created in 2021/7/21 19:52
  */
-public class RequestFormEntity extends BaseRequestEntity {
+public class RequestFormEntity extends RequestEntity {
 
     public RequestFormEntity(Form form) {
-        this.setEntity(new UrlEncodedFormEntity(form.build(), StandardCharsets.UTF_8));
-        this.setContent(form.toString());
+        super(new UrlEncodedFormEntity(form.build(), StandardCharsets.UTF_8), form.toString().getBytes(StandardCharsets.UTF_8));
     }
 
     public RequestFormEntity(Map<String, Object> data) {
-        Form form = new Form();
-        data.forEach((key, value) -> form.add(key, value == null ? "" : String.valueOf(value)));
-        this.setEntity(new UrlEncodedFormEntity(form.build(), StandardCharsets.UTF_8));
-        this.setContent(form.toString());
+        this(Form.create(data));
     }
 }

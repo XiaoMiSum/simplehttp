@@ -16,7 +16,7 @@ public class Response {
 
     private final Long startTime;
     private Long endTime;
-    private String text;
+    private byte[] bytes;
     private int statusCode;
     private Header[] headers;
     private HttpClientContext context;
@@ -29,7 +29,7 @@ public class Response {
         this.endTime = System.currentTimeMillis();
         this.statusCode = response.getCode();
         this.headers = response.getHeaders();
-        this.text = EntityUtils.toString(response.getEntity(), "UTF-8");
+        this.bytes = EntityUtils.toByteArray(response.getEntity());
         return this;
     }
 
@@ -62,9 +62,14 @@ public class Response {
         return context;
     }
 
-    public String text() {
-        return text;
+    public byte[] bytes() {
+        return bytes;
     }
+
+    public String text() {
+        return new String(bytes);
+    }
+
 
     public List<Cookie> cookies() {
         return context != null && context.getCookieStore() != null ? context.getCookieStore().getCookies() : null;
