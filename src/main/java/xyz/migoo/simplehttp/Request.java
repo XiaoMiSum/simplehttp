@@ -14,6 +14,7 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
 import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.HttpHost;
+import org.apache.hc.core5.http.HttpVersion;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.hc.core5.net.URIBuilder;
@@ -84,6 +85,11 @@ public class Request {
 
     public static Request options(String url) {
         return new Request(HttpOptions.METHOD_NAME, url);
+    }
+
+    public Request http2() {
+        request.setVersion(HttpVersion.HTTP_2_0);
+        return this;
     }
 
     public Request body(RequestEntity entity) {
