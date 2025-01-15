@@ -1,20 +1,21 @@
 package xyz.migoo.simplehttp;
 
+import org.apache.hc.client5.http.auth.AuthScope;
+import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
+import org.apache.hc.client5.http.config.TlsConfig;
 import org.apache.hc.client5.http.cookie.CookieStore;
 import org.apache.hc.client5.http.impl.DefaultRedirectStrategy;
+import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.impl.routing.DefaultProxyRoutePlanner;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
-import org.apache.hc.client5.http.socket.LayeredConnectionSocketFactory;
-import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
-import org.apache.hc.core5.ssl.SSLInitializationException;
+import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
+import org.apache.hc.core5.http.HttpHost;
 import org.apache.hc.core5.util.TimeValue;
 
-import javax.net.ssl.SSLContext;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -23,32 +24,43 @@ import java.util.concurrent.TimeUnit;
  */
 public class Client {
 
-    private final static PoolingHttpClientConnectionManager POOLING_HTTP_CLIENT_CONNECTION_MANAGER;
     final static CloseableHttpClient CLIENT;
+    private final static PoolingHttpClientConnectionManager POOLING_HTTP_CLIENT_CONNECTION_MANAGER;
 
     static {
-        LayeredConnectionSocketFactory ssl = null;
-        try {
-            ssl = SSLConnectionSocketFactory.getSystemSocketFactory();
-        } catch (SSLInitializationException ex) {
-            try {
-                SSLContext sslcontext = SSLContext.getInstance("SSL");
-                sslcontext.init(null, null, null);
-                ssl = new SSLConnectionSocketFactory(sslcontext);
-            } catch (SecurityException | KeyManagementException | NoSuchAlgorithmException ignore) {
-            }
-        }
-
         POOLING_HTTP_CLIENT_CONNECTION_MANAGER = PoolingHttpClientConnectionManagerBuilder.create()
-                .setSSLSocketFactory(ssl != null ? ssl : SSLConnectionSocketFactory.getSocketFactory())
+                .setTlsSocketStrategy(DefaultClientTlsStrategy.createSystemDefault())
                 .setMaxConnPerRoute(2)
                 .setMaxConnTotal(20)
-                .setValidateAfterInactivity(TimeValue.ofSeconds(1))
+                .setDefaultTlsConfig(TlsConfig.DEFAULT)
                 .build();
         CLIENT = HttpClients.custom()
                 .setRedirectStrategy(new DefaultRedirectStrategy())
                 .setConnectionManager(POOLING_HTTP_CLIENT_CONNECTION_MANAGER)
                 .build();
+    }
+
+    private final CloseableHttpClient httpClient;
+    private volatile CookieStore cookieStore;
+
+    private Client(CloseableHttpClient httpClient) {
+        this.httpClient = httpClient;
+    }
+
+    static CloseableHttpClient httpClient(HttpProxy httpProxy) {
+        var builder = HttpClients.custom()
+                .setRedirectStrategy(new DefaultRedirectStrategy())
+                .setConnectionManager(POOLING_HTTP_CLIENT_CONNECTION_MANAGER);
+        if (httpProxy != null) {
+            var proxy = new HttpHost(httpProxy.getScheme(), httpProxy.getHost(), httpProxy.getPort());
+            builder.setRoutePlanner(new DefaultProxyRoutePlanner(proxy));
+            if (httpProxy.hasUsernameAndPassword()) {
+                var provider = new BasicCredentialsProvider();
+                provider.setCredentials(new AuthScope(proxy), new UsernamePasswordCredentials(httpProxy.getUsername(), httpProxy.getPassword().toCharArray()));
+                builder.setDefaultCredentialsProvider(provider);
+            }
+        }
+        return builder.build();
     }
 
     public static void closeIdleConnections() {
@@ -63,21 +75,12 @@ public class Client {
         return new Client(CLIENT);
     }
 
-    private final CloseableHttpClient httpClient;
-    private volatile CookieStore cookieStore;
-
-    private Client(CloseableHttpClient httpClient) {
-        super();
-        this.httpClient = httpClient;
-    }
-
     public Response execute(Request request) throws Exception {
+        var context = HttpClientContext.create();
         if (this.cookieStore != null) {
-            HttpClientContext context = HttpClientContext.create();
-            context.setAttribute(HttpClientContext.COOKIE_STORE, this.cookieStore);
-            request.context(context);
+            context.setCookieStore(this.cookieStore);
         }
-        return request.execute(this.httpClient);
+        return request.execute(this.httpClient, context);
     }
 
     public Client cookieStore(final CookieStore cookieStore) {

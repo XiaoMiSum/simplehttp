@@ -19,7 +19,7 @@ public class RequestJsonEntity extends RequestEntity {
         this(json, APPLICATION_JSON);
     }
 
-    public RequestJsonEntity(Map<?, ?> body) {
+    public RequestJsonEntity(Map<String, ?> body) {
         this(toJson(body));
     }
 
@@ -27,38 +27,34 @@ public class RequestJsonEntity extends RequestEntity {
         super(new StringEntity(content, contentType), content.getBytes(StandardCharsets.UTF_8));
     }
 
-    private static String toJson(Map<?, ?> body) {
-        StringBuilder sb = new StringBuilder("{");
+    static String toJson(Map<?, ?> body) {
+        var sb = new StringBuilder("{");
         for (Object key : body.keySet()) {
-            Object value = body.get(key);
+            var value = body.get(key);
             if (sb.length() > 1) {
                 sb.append(",");
             }
             sb.append("\"").append(key).append("\": ");
-            if (value instanceof Map) {
-                sb.append(toJson((Map<?, ?>) value));
-            } else if (value instanceof List) {
-                sb.append(toJson((List<?>) value));
-            } else {
-                sb.append(getValue(value));
-            }
+            sb.append(switch (value) {
+                case Map<?, ?> object -> toJson(object);
+                case List<?> objects -> toJson(objects);
+                default -> getValue(value);
+            });
         }
         return sb.append("}").toString();
     }
 
-    private static String toJson(List<?> list) {
+    static String toJson(List<?> list) {
         StringBuilder sb = new StringBuilder("[");
         for (Object obj : list) {
             if (sb.length() > 1) {
                 sb.append(",");
             }
-            if (obj instanceof Map) {
-                sb.append(toJson((Map<?, ?>) obj));
-            } else if (obj instanceof List) {
-                sb.append(toJson((List<?>) obj));
-            } else {
-                sb.append(getValue(obj));
-            }
+            sb.append(switch (obj) {
+                case Map<?, ?> object -> toJson(object);
+                case List<?> objects -> toJson(objects);
+                default -> getValue(obj);
+            });
         }
         return sb.append("]").toString();
     }

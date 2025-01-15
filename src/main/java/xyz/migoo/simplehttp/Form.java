@@ -47,10 +47,10 @@ public class Form {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
+        var sb = new StringBuilder();
         sb.append("{");
         for (int i = 0; i < data.size(); i++) {
-            NameValuePair pair = data.get(i);
+            var pair = data.get(i);
             sb.append("\"").append(pair.getName()).append("\": ");
             if (pair.getValue() != null) {
                 sb.append("\"").append(pair.getValue()).append("\"");

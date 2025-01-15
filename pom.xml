@@ -6,7 +6,7 @@
 
     <groupId>xyz.migoo</groupId>
     <artifactId>simplehttp</artifactId>
-    <version>2.1.0</version>
+    <version>2.2.0</version>
 
     <name>simplehttp</name>
     <description>a simple http client</description>
@@ -35,9 +35,18 @@
     </developers>
 
     <properties>
-        <jdk.version>1.8</jdk.version>
-        <compile.version>3.5.1</compile.version>
-        <http.client.version>5.3</http.client.version>
+        <junit.version>5.11.4</junit.version>
+
+        <http.client.version>5.4.1</http.client.version>
+
+        <compiler.version>3.13.0</compiler.version>
+        <javadoc.version>3.11.2</javadoc.version>
+        <surefire.version>3.5.2</surefire.version>
+        <gpg-plugin.version>3.2.7</gpg-plugin.version>
+
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <dependencies>
@@ -50,7 +59,7 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.8.1</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -74,36 +83,12 @@
                 <filtering>true</filtering>
             </resource>
         </resources>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${compile.version}</version>
-                <configuration>
-                    <source>${jdk.version}</source>
-                    <target>${jdk.version}</target>
-                </configuration>
-            </plugin>
-            <!--            <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-source-plugin</artifactId>
-                            <version>3.0.1</version>
-                            <configuration>
-                                <attach>true</attach>
-                            </configuration>
-                            <executions>
-                                <execution>
-                                    <phase>install</phase>
-                                    <goals>
-                                        <goal>jar</goal>
-                                    </goals>
-                                </execution>
-                            </executions>
-                        </plugin>-->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.10.3</version>
+                <version>${javadoc.version}</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
@@ -114,16 +99,22 @@
                 </executions>
                 <configuration>
                     <!-- 解决 java8 下发布到 maven 中心库时，生成 doc 的异常 -->
-                    <additionalparam>-Xdoclint:none</additionalparam>
+                    <additionalJOptions>
+                        <additionalJOption>-Xdoclint:none</additionalJOption>
+                    </additionalJOptions>
                     <encoding>UTF-8</encoding>
                     <outputDirectory>${basedir}/doc</outputDirectory>
-                    <reportOutputDirectory>${basedir}/report</reportOutputDirectory>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${compiler.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-gpg-plugin</artifactId>
-                <version>1.5</version>
+                <version>${gpg-plugin.version}</version>
                 <executions>
                     <execution>
                         <phase>verify</phase>
@@ -132,6 +123,11 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${surefire.version}</version>
             </plugin>
         </plugins>
     </build>

@@ -1,5 +1,7 @@
 package xyz.migoo.simplehttp;
 
+import java.util.Objects;
+
 /**
  * @author xiaomi
  * @date 2020/1/4 12:36
@@ -77,5 +79,15 @@ public class HttpProxy {
 
     public boolean hasUsernameAndPassword() {
         return username != null && !username.isEmpty() && password != null && !password.isEmpty();
+    }
+
+    public String toString() {
+        return "{" +
+                "\"scheme\": \"" + (Objects.isNull(scheme) ? "" : scheme) + "\", " +
+                "\"host\": \"" + (Objects.isNull(host) ? "" : host) + "\", " +
+                "\"port\": \"" + (Objects.isNull(port) || port <= 0 ? "" : port) + "\", " +
+                "\"username\": \"" + (Objects.isNull(username) ? "" : username) + "\", " +
+                "\"password\": \"" + (Objects.isNull(password) ? "" : password) + "\"" +
+                "}";
     }
 }

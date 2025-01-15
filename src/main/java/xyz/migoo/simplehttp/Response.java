@@ -1,12 +1,16 @@
 package xyz.migoo.simplehttp;
 
 import org.apache.hc.client5.http.cookie.Cookie;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.cookie.CookieStore;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
+import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.io.HttpClientResponseHandler;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author xiaomi
@@ -19,23 +23,11 @@ public class Response {
     private byte[] bytes;
     private int statusCode;
     private Header[] headers;
-    private HttpClientContext context;
+    private String version;
+    private CookieStore cookieStore;
 
-    public Response() {
-        this.startTime = System.currentTimeMillis();
-    }
-
-    public Response response(CloseableHttpResponse response) throws Exception {
-        this.endTime = System.currentTimeMillis();
-        this.statusCode = response.getCode();
-        this.headers = response.getHeaders();
-        this.bytes = EntityUtils.toByteArray(response.getEntity());
-        return this;
-    }
-
-    Response context(HttpClientContext context) {
-        this.context = context;
-        return this;
+    public Response(long startTime) {
+        this.startTime = startTime;
     }
 
     public int statusCode() {
@@ -58,10 +50,6 @@ public class Response {
         return endTime - startTime;
     }
 
-    public HttpClientContext getContext() {
-        return context;
-    }
-
     public byte[] bytes() {
         return bytes;
     }
@@ -70,8 +58,33 @@ public class Response {
         return new String(bytes);
     }
 
-
     public List<Cookie> cookies() {
-        return context != null && context.getCookieStore() != null ? context.getCookieStore().getCookies() : null;
+        return Objects.nonNull(cookieStore) ? cookieStore.getCookies() : null;
+    }
+
+    public String version() {
+        return version;
+    }
+
+    public static class ResponseHandler implements HttpClientResponseHandler<Response> {
+        
+        private final Response result = new Response(System.currentTimeMillis());
+
+        public ResponseHandler(HttpClientContext context) {
+            result.cookieStore = context.getCookieStore();
+        }
+
+        public Response handleResponse(ClassicHttpResponse response) throws IOException {
+            try {
+                result.endTime = System.currentTimeMillis();
+                result.statusCode = response.getCode();
+                result.headers = response.getHeaders();
+                result.version = response.getVersion().toString();
+                result.bytes = EntityUtils.toByteArray(response.getEntity());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            return result;
+        }
     }
 }

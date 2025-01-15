@@ -1,11 +1,15 @@
 package xyz.migoo.simplehttp.test;
 
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import xyz.migoo.simplehttp.Client;
 import xyz.migoo.simplehttp.Request;
+import xyz.migoo.simplehttp.RequestEntity;
 import xyz.migoo.simplehttp.RequestJsonEntity;
+
+import java.util.Map;
 
 /**
  * @author xiaomi
@@ -31,6 +35,20 @@ class SimpleHttpTest {
         Assertions.assertEquals(200, Request.put("http://migoo.xyz/api/task/schedule/edit")
                 .addHeader("token", "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIxNTU4MTU4NTAyODA3IiwiZXhwIjoxNTY4NDMzMzQ2fQ.ZoxwmAnmb2zJB1Wne8bkPFpKWZKo1c-ggi6nIoT79NE")
                 .body(new RequestJsonEntity("{\"id\":\"1558159224394\",\"title\":\"哈哈\",\"locked\":0,\"isDelete\":0}"))
+                .execute().statusCode());
+    }
+
+    @Test
+    void testFile1() throws Exception {
+        Assertions.assertEquals(200, Request.post("http://localhost:58081/user/file")
+                .body(RequestEntity.binary(new BasicNameValuePair("test", "D:/Users/Desktop/test.txt"), Map.of("key", "value")))
+                .execute().statusCode());
+    }
+
+    @Test
+    void testFile2() throws Exception {
+        Assertions.assertEquals(200, Request.post("http://localhost:58081/user/file2")
+                .body(RequestEntity.binary(new BasicNameValuePair("test", "D:/Users/Desktop/test.txt,D:/Users/Desktop/test.txt"), Map.of("key", "value")))
                 .execute().statusCode());
     }
 

@@ -1,28 +1,23 @@
 package xyz.migoo.simplehttp;
 
-import org.apache.hc.client5.http.auth.AuthScope;
-import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
 import org.apache.hc.client5.http.classic.methods.*;
 import org.apache.hc.client5.http.config.Configurable;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.cookie.BasicCookieStore;
 import org.apache.hc.client5.http.cookie.Cookie;
-import org.apache.hc.client5.http.cookie.CookieStore;
-import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.cookie.BasicClientCookie;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
+import org.apache.hc.client5.http.utils.DateUtils;
 import org.apache.hc.core5.http.Header;
-import org.apache.hc.core5.http.HttpHost;
 import org.apache.hc.core5.http.HttpVersion;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.hc.core5.net.URIBuilder;
 import org.apache.hc.core5.util.Args;
 import org.apache.hc.core5.util.Timeout;
 
 import java.net.URI;
-import java.util.List;
+import java.util.*;
 
 import static org.apache.hc.core5.http.HttpHeaders.USER_AGENT;
 
@@ -35,13 +30,13 @@ public class Request {
     private HttpRequest request;
     private Form query;
     private byte[] body;
-    private HttpClientContext context;
     private Boolean useExpectContinue;
     private Integer socketTimeout;
     private Integer connectTimeout;
     private Integer readTimeout;
     private Boolean redirectsEnabled;
-    private HttpHost proxy;
+    private HttpProxy proxy;
+    private List<Cookie> cookies;
 
     protected Request(String method, String url) {
         this(new HttpRequest(method, URI.create(url)));
@@ -92,6 +87,11 @@ public class Request {
         return this;
     }
 
+    public Request version(HttpVersion version) {
+        request.setVersion(version);
+        return this;
+    }
+
     public Request body(RequestEntity entity) {
         this.body = entity.getContent();
         request.setEntity(entity.getEntity());
@@ -104,23 +104,36 @@ public class Request {
         return this;
     }
 
-    public Request context(HttpClientContext context) {
-        this.context = Args.notNull(context, "context");
-        return this;
-    }
-
-    public Request cookies(CookieStore cookieStore) {
-        context = context == null ? HttpClientContext.create() : context;
-        context.setCookieStore(Args.notNull(cookieStore, "cookies"));
-        return this;
-    }
-
     public Request cookies(List<Cookie> cookies) {
-        context = context == null ? HttpClientContext.create() : context;
-        CookieStore cookieStore = new BasicCookieStore();
-        Args.notNull(cookies, "cookies").forEach(cookieStore::addCookie);
-        context.setCookieStore(cookieStore);
+        this.cookies = cookies;
         return this;
+    }
+
+    public Request cookies(Cookie... cookies) {
+        if (cookies.length > 1) {
+            this.cookies = Arrays.stream(cookies).toList();
+        }
+        return this;
+    }
+
+    public Request addCookie(Cookie... cookies) {
+        if (cookies.length > 1) {
+            this.cookies = Optional.ofNullable(this.cookies).orElse(new ArrayList<>());
+            this.cookies.addAll(Arrays.stream(cookies).toList());
+        }
+        return this;
+    }
+
+    public Request addCookie(String name, String value, String domain, String path, Date expiryDate) {
+        var cookie = new BasicClientCookie(name, value);
+        cookie.setDomain(domain);
+        cookie.setPath(path);
+        cookie.setExpiryDate(DateUtils.toInstant(expiryDate));
+        return this.addCookie();
+    }
+
+    public Request addCookie(String name, String value) {
+        return this.addCookie(name, value, null, null, null);
     }
 
     public Request headers(List<Header> headers) {
@@ -138,60 +151,60 @@ public class Request {
     }
 
     public Request proxy(HttpProxy proxy) {
-        this.proxy = new HttpHost(proxy.getScheme(), proxy.getHost(), proxy.getPort());
-        if (proxy.hasUsernameAndPassword()) {
-            BasicCredentialsProvider provider = new BasicCredentialsProvider();
-            provider.setCredentials(new AuthScope(this.proxy), new UsernamePasswordCredentials(proxy.getUsername(), proxy.getPassword().toCharArray()));
-            context = context == null ? HttpClientContext.create() : context;
-            context.setCredentialsProvider(provider);
-        }
+        this.proxy = proxy;
         return this;
     }
 
+    public Request proxy(String host, Integer port) {
+        return this.proxy(null, host, port);
+    }
+
+    public Request proxy(String scheme, String host, Integer port) {
+        return this.proxy(scheme, host, port, null, null);
+    }
+
+    public Request proxy(String scheme, String host, Integer port, String username, String password) {
+        return this.proxy(new HttpProxy(scheme, host, port, username, password));
+    }
+
+    Response execute(CloseableHttpClient client, HttpClientContext context) throws Exception {
+        if (query != null && !query.build().isEmpty()) {
+            request.setUri(new URIBuilder(request.getUri()).addParameters(query.build()).build());
+        }
+        return client.execute(request, context, new Response.ResponseHandler(context));
+    }
+
     public Response execute() throws Exception {
-        return execute(Client.CLIENT);
+        return execute(Objects.isNull(proxy) ? Client.CLIENT : Client.httpClient(proxy));
     }
 
     public Response execute(CloseableHttpClient client) throws Exception {
-        this.setRequestConfig(client);
-        if (query != null && query.build().size() > 0) {
-            request.setUri(new URIBuilder(request.getUri()).addParameters(query.build()).build());
+        var localContext = HttpClientContext.create();
+        final var builder = client instanceof Configurable configurable ? RequestConfig.copy(configurable.getConfig())
+                : RequestConfig.custom();
+        if (Objects.nonNull(useExpectContinue)) {
+            builder.setExpectContinueEnabled(useExpectContinue);
         }
-        final Response response = new Response();
-        try (CloseableHttpResponse httpResponse = client.execute(request, context)) {
-            response.response(httpResponse).context(context);
-            EntityUtils.consume(httpResponse.getEntity());
-        }
-        return response;
-    }
-
-    private void setRequestConfig(CloseableHttpClient client) {
-        final RequestConfig.Builder builder;
-        if (client instanceof Configurable) {
-            builder = RequestConfig.copy(((Configurable) client).getConfig());
-        } else {
-            builder = RequestConfig.custom();
-        }
-        if (this.useExpectContinue != null) {
-            builder.setExpectContinueEnabled(this.useExpectContinue);
-        }
-        if (this.socketTimeout != null) {
+        if (Objects.nonNull(socketTimeout)) {
             builder.setConnectionRequestTimeout(Timeout.ofSeconds(socketTimeout));
-
         }
-        if (this.connectTimeout != null) {
+        if (Objects.nonNull(connectTimeout)) {
             builder.setConnectTimeout(Timeout.ofSeconds(connectTimeout));
         }
-        if (this.readTimeout != null) {
+        if (Objects.nonNull(readTimeout)) {
             builder.setResponseTimeout(Timeout.ofSeconds(readTimeout));
         }
-        if (this.proxy != null) {
-            builder.setProxy(this.proxy);
+        if (Objects.nonNull(cookies)) {
+            var cookieStore = new BasicCookieStore();
+            cookies.forEach(cookieStore::addCookie);
+            localContext.setCookieStore(cookieStore);
         }
-        if (this.redirectsEnabled != null) {
-            builder.setRedirectsEnabled(true);
+        builder.setRedirectsEnabled(Objects.nonNull(redirectsEnabled) ? redirectsEnabled : true);
+        localContext.setRequestConfig(builder.build());
+        if (Objects.nonNull(query) && !query.build().isEmpty()) {
+            request.setUri(new URIBuilder(request.getUri()).addParameters(query.build()).build());
         }
-        this.request.setConfig(builder.build());
+        return execute(client, localContext);
     }
 
     public Request useExpectContinue() {
@@ -240,17 +253,13 @@ public class Request {
         return proxy == null ? null : proxy.toString();
     }
 
-    public HttpClientContext context() {
-        return context;
-    }
-
     public String method() {
         return request.getMethod();
     }
 
     public String uri() {
         return request.getScheme() + "://" + request.getAuthority().getHostName()
-                + (request.getAuthority().getPort() > -1 ? request.getAuthority().getPort() : "")
+                + (request.getAuthority().getPort() > -1 ? ":" + request.getAuthority().getPort() : "")
                 + request.getRequestUri();
     }
 
