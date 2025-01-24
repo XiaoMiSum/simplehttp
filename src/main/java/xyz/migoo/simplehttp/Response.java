@@ -75,15 +75,11 @@ public class Response {
         }
 
         public Response handleResponse(ClassicHttpResponse response) throws IOException {
-            try {
-                result.endTime = System.currentTimeMillis();
-                result.statusCode = response.getCode();
-                result.headers = response.getHeaders();
-                result.version = response.getVersion().toString();
-                result.bytes = EntityUtils.toByteArray(response.getEntity());
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+            result.endTime = System.currentTimeMillis();
+            result.statusCode = response.getCode();
+            result.headers = response.getHeaders();
+            result.version = response.getVersion().toString();
+            result.bytes = EntityUtils.toByteArray(response.getEntity());
             return result;
         }
     }

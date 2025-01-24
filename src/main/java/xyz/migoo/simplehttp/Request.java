@@ -110,14 +110,14 @@ public class Request {
     }
 
     public Request cookies(Cookie... cookies) {
-        if (cookies.length > 1) {
+        if (cookies.length > 0) {
             this.cookies = Arrays.stream(cookies).toList();
         }
         return this;
     }
 
     public Request addCookie(Cookie... cookies) {
-        if (cookies.length > 1) {
+        if (cookies.length > 0) {
             this.cookies = Optional.ofNullable(this.cookies).orElse(new ArrayList<>());
             this.cookies.addAll(Arrays.stream(cookies).toList());
         }
@@ -237,6 +237,11 @@ public class Request {
         return this;
     }
 
+    public Request redirectsEnabled(Boolean redirectsEnabled) {
+        this.redirectsEnabled = redirectsEnabled;
+        return this;
+    }
+
     public byte[] body() {
         return body == null ? new byte[]{} : body;
     }
@@ -257,6 +262,10 @@ public class Request {
         return request.getMethod();
     }
 
+    public List<Cookie> cookies() {
+        return cookies;
+    }
+
     public String uri() {
         return request.getScheme() + "://" + request.getAuthority().getHostName()
                 + (request.getAuthority().getPort() > -1 ? ":" + request.getAuthority().getPort() : "")
@@ -265,9 +274,5 @@ public class Request {
 
     public Boolean redirectsEnabled() {
         return redirectsEnabled;
-    }
-
-    public void redirectsEnabled(Boolean redirectsEnabled) {
-        this.redirectsEnabled = redirectsEnabled;
     }
 }
