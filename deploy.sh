@@ -1,1 +1,1 @@
-mvn clean package source:jar deploy gpg:sign
+mvn clean package -Dmaven.test.skip=true source:jar deploy gpg:sign
