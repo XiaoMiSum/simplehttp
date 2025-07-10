@@ -48,6 +48,14 @@ public abstract class RequestEntity {
         return new RequestBytesEntity(bytes, mimeType);
     }
 
+    public static RequestEntity binary(NameValuePair fileNvp) {
+        return binary(fileNvp, null);
+    }
+
+    public static RequestEntity binary(List<NameValuePair> files) {
+        return binary(files, null);
+    }
+
     public static RequestEntity binary(NameValuePair fileNvp, Map<String, Object> data) {
         return binary(List.of(fileNvp), data);
     }
