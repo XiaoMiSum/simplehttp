@@ -44,6 +44,10 @@ public abstract class RequestEntity {
         return new RequestFormEntity(form);
     }
 
+    public static RequestEntity text(String text) {
+        return new RequestBytesEntity(text.getBytes(StandardCharsets.UTF_8), "text/plain");
+    }
+
     public static RequestEntity bytes(byte[] bytes, String mimeType) {
         return new RequestBytesEntity(bytes, mimeType);
     }
