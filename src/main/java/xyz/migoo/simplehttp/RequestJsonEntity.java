@@ -4,6 +4,7 @@ import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -38,7 +39,7 @@ public class RequestJsonEntity extends RequestEntity {
             sb.append(switch (value) {
                 case Map<?, ?> object -> toJson(object);
                 case List<?> objects -> toJson(objects);
-                default -> getValue(value);
+                case null, default -> getValue(value);
             });
         }
         return sb.append("}").toString();
@@ -53,7 +54,7 @@ public class RequestJsonEntity extends RequestEntity {
             sb.append(switch (obj) {
                 case Map<?, ?> object -> toJson(object);
                 case List<?> objects -> toJson(objects);
-                default -> getValue(obj);
+                case null, default -> getValue(obj);
             });
         }
         return sb.append("]").toString();
@@ -61,5 +62,17 @@ public class RequestJsonEntity extends RequestEntity {
 
     private static Object getValue(Object value) {
         return value == null || value instanceof Number ? value : "\"" + value + "\"";
+    }
+
+    public static void main(String[] args) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("1", "test");
+        data.put("2", 2);
+        data.put("3", null);
+        data.put("4", true);
+        data.put("5", Map.of("5.1", "1", "5.2", 2, "5.3", true, "5.4", Map.of("test1", 1, "test2", List.of("l2")), "5.5", List.of("l1", List.of("l2"), Map.of("l3", "test"))));
+        data.put("6", List.of("1", 2, true, Map.of("key1", "1"), List.of(5)));
+        System.out.println(toJson(data));
+
     }
 }
