@@ -11,6 +11,7 @@ import org.apache.hc.client5.http.protocol.HttpClientContext;
 import org.apache.hc.client5.http.utils.DateUtils;
 import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.HttpVersion;
+import org.apache.hc.core5.http.URIScheme;
 import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.hc.core5.net.URIBuilder;
 import org.apache.hc.core5.util.Args;
@@ -267,12 +268,28 @@ public class Request {
     }
 
     public String uri() {
-        return request.getScheme() + "://" + request.getAuthority().getHostName()
-                + (request.getAuthority().getPort() > -1 ? ":" + request.getAuthority().getPort() : "")
-                + request.getRequestUri();
+        StringBuilder buf = new StringBuilder();
+        if (request.getAuthority() != null) {
+            buf.append(request.getScheme() != null ? request.getScheme() : URIScheme.HTTP.id).append("://");
+            buf.append(request.getAuthority().getHostName());
+            if (request.getAuthority().getPort() > 0) {
+                buf.append(":").append(request.getAuthority().getPort());
+            }
+        }
+        var path = request.getPath();
+        if (path == null) {
+            buf.append("/");
+        } else {
+            if (!buf.isEmpty() && !path.startsWith("/")) {
+                buf.append("/");
+            }
+
+            buf.append(path);
+        }
+        return buf.toString();
     }
 
-    public Boolean redirectsEnabled() {
-        return redirectsEnabled;
+    public String version() {
+        return request.getVersion().toString();
     }
 }
