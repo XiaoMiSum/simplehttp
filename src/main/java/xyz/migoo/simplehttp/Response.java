@@ -68,12 +68,8 @@ public class Response {
         return version;
     }
 
-    public String getMessage() {
+    public String message() {
         return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
     }
 
     public static class ResponseHandler implements HttpClientResponseHandler<Response> {
