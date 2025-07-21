@@ -26,6 +26,8 @@ public class Response {
     private String version;
     private CookieStore cookieStore;
 
+    private String message;
+
     public Response(long startTime) {
         this.startTime = startTime;
     }
@@ -66,6 +68,14 @@ public class Response {
         return version;
     }
 
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
     public static class ResponseHandler implements HttpClientResponseHandler<Response> {
 
         private final Response result = new Response(System.currentTimeMillis());
@@ -80,6 +90,7 @@ public class Response {
             result.headers = response.getHeaders();
             result.version = response.getVersion().toString();
             result.bytes = EntityUtils.toByteArray(response.getEntity());
+            result.message = response.getReasonPhrase();
             return result;
         }
     }
