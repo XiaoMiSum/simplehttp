@@ -1,6 +1,5 @@
 package xyz.migoo.simplehttp;
 
-import org.apache.hc.client5.http.classic.methods.*;
 import org.apache.hc.client5.http.config.Configurable;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.cookie.BasicCookieStore;
@@ -21,6 +20,7 @@ import java.net.URI;
 import java.util.*;
 
 import static org.apache.hc.core5.http.HttpHeaders.USER_AGENT;
+import static xyz.migoo.simplehttp.HttpMethod.*;
 
 /**
  * @author xiaomi
@@ -51,36 +51,40 @@ public class Request {
         return new Request(method, url);
     }
 
+    public static Request create(HttpMethod method, String url) {
+        return create(method.name(), url);
+    }
+
     public static Request get(String url) {
-        return new Request(HttpGet.METHOD_NAME, url);
+        return create(GET, url);
     }
 
     public static Request post(String url) {
-        return new Request(HttpPost.METHOD_NAME, url);
+        return create(POST, url);
     }
 
     public static Request put(String url) {
-        return new Request(HttpPut.METHOD_NAME, url);
+        return create(PUT, url);
     }
 
     public static Request delete(String url) {
-        return new Request(HttpDelete.METHOD_NAME, url);
+        return create(DELETE, url);
     }
 
     public static Request head(String url) {
-        return new Request(HttpHead.METHOD_NAME, url);
+        return create(HEAD, url);
     }
 
     public static Request patch(String url) {
-        return new Request(HttpPatch.METHOD_NAME, url);
+        return create(PATCH, url);
     }
 
     public static Request trace(String url) {
-        return new Request(HttpTrace.METHOD_NAME, url);
+        return create(TRACE, url);
     }
 
     public static Request options(String url) {
-        return new Request(HttpOptions.METHOD_NAME, url);
+        return create(OPTIONS, url);
     }
 
     public Request http2() {
