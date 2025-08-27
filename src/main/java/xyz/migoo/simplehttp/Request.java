@@ -14,12 +14,12 @@ import org.apache.hc.core5.http.URIScheme;
 import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.hc.core5.net.URIBuilder;
 import org.apache.hc.core5.util.Args;
-import org.apache.hc.core5.util.Timeout;
 
 import java.net.URI;
 import java.util.*;
 
 import static org.apache.hc.core5.http.HttpHeaders.USER_AGENT;
+import static org.apache.hc.core5.util.Timeout.ofSeconds;
 import static xyz.migoo.simplehttp.HttpMethod.*;
 
 /**
@@ -33,7 +33,6 @@ public class Request {
     private byte[] body;
     private Boolean useExpectContinue;
     private Integer socketTimeout;
-    private Integer connectTimeout;
     private Integer readTimeout;
     private Boolean redirectsEnabled;
     private HttpProxy proxy;
@@ -187,19 +186,10 @@ public class Request {
         var localContext = HttpClientContext.create();
         final var builder = client instanceof Configurable configurable ? RequestConfig.copy(configurable.getConfig())
                 : RequestConfig.custom();
-        if (Objects.nonNull(useExpectContinue)) {
-            builder.setExpectContinueEnabled(useExpectContinue);
-        }
-        if (Objects.nonNull(socketTimeout)) {
-            builder.setConnectionRequestTimeout(Timeout.ofSeconds(socketTimeout));
-        }
-        if (Objects.nonNull(connectTimeout)) {
-            builder.setConnectTimeout(Timeout.ofSeconds(connectTimeout));
-        }
-        if (Objects.nonNull(readTimeout)) {
-            builder.setResponseTimeout(Timeout.ofSeconds(readTimeout));
-        }
-        if (Objects.nonNull(cookies)) {
+        builder.setExpectContinueEnabled(Objects.nonNull(useExpectContinue) ? useExpectContinue : false);
+        builder.setConnectionRequestTimeout(Objects.nonNull(socketTimeout) ? ofSeconds(socketTimeout) : ofSeconds(180));
+        builder.setResponseTimeout(Objects.nonNull(readTimeout) ? ofSeconds(readTimeout) : ofSeconds(180));
+        if (Objects.nonNull(cookies) && !cookies.isEmpty()) {
             var cookieStore = new BasicCookieStore();
             cookies.forEach(cookieStore::addCookie);
             localContext.setCookieStore(cookieStore);
@@ -224,11 +214,6 @@ public class Request {
 
     public Request socketTimeout(final int timeout) {
         this.socketTimeout = timeout;
-        return this;
-    }
-
-    public Request connectTimeout(final int timeout) {
-        this.connectTimeout = timeout;
         return this;
     }
 
