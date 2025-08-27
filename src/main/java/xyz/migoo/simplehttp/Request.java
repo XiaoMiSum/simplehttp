@@ -39,7 +39,7 @@ public class Request {
     private List<Cookie> cookies;
 
     protected Request(String method, String url) {
-        this(new HttpRequest(method, URI.create(url)));
+        this(new HttpRequest(method.toUpperCase(Locale.ROOT), URI.create(url)));
     }
 
     private Request(HttpRequest request) {
