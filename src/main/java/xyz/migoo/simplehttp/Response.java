@@ -9,8 +9,13 @@ import org.apache.hc.core5.http.io.HttpClientResponseHandler;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
+
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 
 /**
  * @author xiaomi
@@ -30,6 +35,10 @@ public class Response {
 
     public Response(long startTime) {
         this.startTime = startTime;
+    }
+
+    public static void main(String[] args) {
+        System.out.println(Path.of("D:\\bs", "ReadMe.md"));
     }
 
     public int statusCode() {
@@ -58,6 +67,10 @@ public class Response {
 
     public String text() {
         return new String(bytes);
+    }
+
+    public String save(String path) throws IOException {
+        return Files.write(Path.of(path), bytes, CREATE, TRUNCATE_EXISTING).toString();
     }
 
     public List<Cookie> cookies() {
