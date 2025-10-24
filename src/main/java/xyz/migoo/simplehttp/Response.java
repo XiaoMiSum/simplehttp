@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
@@ -66,11 +67,21 @@ public class Response {
     }
 
     public String text() {
-        return new String(bytes);
+        return text(() -> new String(bytes));
     }
 
-    public String save(String path) throws IOException {
-        return Files.write(Path.of(path), bytes, CREATE, TRUNCATE_EXISTING).toString();
+    public String text(Supplier<String> supplier) {
+        return supplier.get();
+    }
+
+    public String save(String path) {
+        return text(() -> {
+            try {
+                return Files.write(Path.of(path), bytes, CREATE, TRUNCATE_EXISTING).toString();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     public List<Cookie> cookies() {
