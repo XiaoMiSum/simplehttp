@@ -6,7 +6,7 @@
 
     <groupId>xyz.migoo</groupId>
     <artifactId>simplehttp</artifactId>
-    <version>2.2.7</version>
+    <version>2.2.6</version>
 
     <name>simplehttp</name>
     <description>a simple http client</description>
@@ -35,7 +35,8 @@
     </developers>
 
     <properties>
-        <junit.version>5.11.4</junit.version>
+        <!-- 单元测试框架 -->
+        <testng.version>7.9.0</testng.version>
 
         <http.client.version>5.5</http.client.version>
 
@@ -59,9 +60,9 @@
         </dependency>
 
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>${junit.version}</version>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>${testng.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

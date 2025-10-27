@@ -1,14 +1,25 @@
 package xyz.migoo.simplehttp;
 
+import org.apache.hc.client5.http.auth.AuthScope;
+import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
 import org.apache.hc.client5.http.config.Configurable;
 import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.config.TlsConfig;
 import org.apache.hc.client5.http.cookie.BasicCookieStore;
 import org.apache.hc.client5.http.cookie.Cookie;
+import org.apache.hc.client5.http.impl.DefaultRedirectStrategy;
+import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.cookie.BasicClientCookie;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.impl.routing.DefaultProxyRoutePlanner;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
+import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
 import org.apache.hc.client5.http.utils.DateUtils;
 import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.HttpHost;
 import org.apache.hc.core5.http.HttpVersion;
 import org.apache.hc.core5.http.URIScheme;
 import org.apache.hc.core5.http.message.BasicHeader;
@@ -24,9 +35,18 @@ import static xyz.migoo.simplehttp.HttpMethod.*;
 
 /**
  * @author xiaomi
- * @date 2019/9/13 10:58
+ * Created at 2019/9/13 10:58
  */
 public class Request {
+
+    private final static PoolingHttpClientConnectionManager POOLING_HTTP_CLIENT_CONNECTION_MANAGER =
+            PoolingHttpClientConnectionManagerBuilder.create()
+                    .setTlsSocketStrategy(DefaultClientTlsStrategy.createSystemDefault())
+                    .setMaxConnPerRoute(2)
+                    .setMaxConnTotal(20)
+                    .setDefaultTlsConfig(TlsConfig.DEFAULT)
+                    .build();
+
 
     private HttpRequest request;
     private Form query;
@@ -140,6 +160,13 @@ public class Request {
         return this.addCookie(name, value, null, null, null);
     }
 
+    public Request headers(Customizer<List<Header>> customizer) {
+        var headers = new ArrayList<Header>();
+        customizer.customize(headers);
+        headers.forEach(request::addHeader);
+        return this;
+    }
+
     public Request headers(List<Header> headers) {
         Args.notNull(headers, "headers").forEach(request::addHeader);
         return this;
@@ -179,13 +206,22 @@ public class Request {
     }
 
     public Response execute() throws Exception {
-        return execute(Objects.isNull(proxy) ? Client.CLIENT : Client.httpClient(proxy));
+        var builder = HttpClients.custom().setRedirectStrategy(new DefaultRedirectStrategy()).setConnectionManager(POOLING_HTTP_CLIENT_CONNECTION_MANAGER);
+        if (this.proxy != null) {
+            var proxy = new HttpHost(this.proxy.getScheme(), this.proxy.getHost(), this.proxy.getPort());
+            builder.setRoutePlanner(new DefaultProxyRoutePlanner(proxy));
+            if (this.proxy.hasUsernameAndPassword()) {
+                var provider = new BasicCredentialsProvider();
+                provider.setCredentials(new AuthScope(proxy), new UsernamePasswordCredentials(this.proxy.getUsername(), this.proxy.getPassword().toCharArray()));
+                builder.setDefaultCredentialsProvider(provider);
+            }
+        }
+        return execute(builder.build());
     }
 
     public Response execute(CloseableHttpClient client) throws Exception {
         var localContext = HttpClientContext.create();
-        final var builder = client instanceof Configurable configurable ? RequestConfig.copy(configurable.getConfig())
-                : RequestConfig.custom();
+        var builder = client instanceof Configurable c ? RequestConfig.copy(c.getConfig()) : RequestConfig.custom();
         builder.setExpectContinueEnabled(Objects.nonNull(useExpectContinue) ? useExpectContinue : false);
         builder.setConnectionRequestTimeout(Objects.nonNull(socketTimeout) ? ofSeconds(socketTimeout) : ofSeconds(180));
         builder.setResponseTimeout(Objects.nonNull(readTimeout) ? ofSeconds(readTimeout) : ofSeconds(180));

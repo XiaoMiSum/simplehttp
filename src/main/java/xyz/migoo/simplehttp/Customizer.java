@@ -28,35 +28,12 @@
 
 package xyz.migoo.simplehttp;
 
-import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
-
 /**
- * 表单请求实体类，用于处理application/x-www-form-urlencoded格式的HTTP请求体
- * 继承自RequestEntity，可以将表单数据编码为URL编码格式
- * 
  * @author xiaomi
- * Created in 2021/7/21 19:52
+ * Created at 2025/10/26 21:25
  */
-public class RequestFormEntity extends RequestEntity {
+@FunctionalInterface
+public interface Customizer<T> {
 
-    /**
-     * 根据表单对象构造一个新的表单请求实体
-     * 
-     * @param form 表单对象
-     */
-    public RequestFormEntity(Form form) {
-        super(new UrlEncodedFormEntity(form.build(), StandardCharsets.UTF_8), form.toString().getBytes(StandardCharsets.UTF_8));
-    }
-
-    /**
-     * 根据表单数据Map构造一个新的表单请求实体
-     * 
-     * @param data 表单数据Map
-     */
-    public RequestFormEntity(Map<String, Object> data) {
-        this(Form.create(data));
-    }
+    void customize(T t);
 }
