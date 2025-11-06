@@ -41,7 +41,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
@@ -63,37 +63,37 @@ public class Response {
     /**
      * 请求结束时间戳
      */
-    private Long endTime;
+    Long endTime;
 
     /**
      * 响应体的字节数组
      */
-    private byte[] bytes;
+    byte[] bytes;
 
     /**
      * HTTP状态码
      */
-    private int statusCode;
+    int statusCode;
 
     /**
      * 响应头数组
      */
-    private Header[] headers;
+    Header[] headers;
 
     /**
      * HTTP版本
      */
-    private String version;
+    String version;
 
     /**
      * Cookie存储
      */
-    private CookieStore cookieStore;
+    CookieStore cookieStore;
 
     /**
      * 响应消息（原因短语）
      */
-    private String message;
+    String message;
 
     /**
      * 构造一个新的响应对象
@@ -164,17 +164,17 @@ public class Response {
      * @return 响应体文本
      */
     public String text() {
-        return text(() -> new String(bytes));
+        return text(byteToStringConverter -> new String(bytes));
     }
 
     /**
-     * 使用指定的供应器获取响应体的文本表示
+     * 使用指定的转换器响应体的文本表示
      *
-     * @param supplier 文本供应器
+     * @param byteToStringConverter 文本转换器
      * @return 响应体文本
      */
-    public String text(Supplier<String> supplier) {
-        return supplier.get();
+    public String text(Function<byte[], String> byteToStringConverter) {
+        return byteToStringConverter.apply(bytes);
     }
 
     /**
@@ -184,7 +184,7 @@ public class Response {
      * @return 文件路径
      */
     public String save(String path) {
-        return text(() -> {
+        return text(byteToStringConverter -> {
             try {
                 return Files.write(Path.of(path), bytes, CREATE, TRUNCATE_EXISTING).toString();
             } catch (Exception e) {
