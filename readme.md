@@ -22,3 +22,23 @@
 </dependency>
 ```
 
+### Maven 引入
+
+在您的 `pom.xml` 中添加以下依赖：
+
+``` xml
+<!-- https://mvnrepository.com/artifact/xyz.migoo/simplehttp -->
+<dependency>
+    <groupId>xyz.migoo</groupId>
+    <artifactId>simplehttp</artifactId>
+    <version>${version}</version>
+</dependency>
+```
+
+### Gradle 引入
+
+在您的 `build.gradle` 中添加：
+
+```gradle
+implementation 'xyz.migoo:simplehttp:${version}'
+
