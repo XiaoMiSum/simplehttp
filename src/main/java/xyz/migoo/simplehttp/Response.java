@@ -164,7 +164,7 @@ public class Response {
      * @return 响应体文本
      */
     public String text() {
-        return text(byteToStringConverter -> new String(bytes));
+        return text(String::new);
     }
 
     /**
