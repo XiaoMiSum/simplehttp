@@ -1,52 +1,25 @@
 package xyz.migoo.simplehttp;
 
-import org.apache.hc.client5.http.auth.AuthScope;
-import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
-import org.apache.hc.client5.http.config.Configurable;
-import org.apache.hc.client5.http.config.RequestConfig;
-import org.apache.hc.client5.http.config.TlsConfig;
-import org.apache.hc.client5.http.cookie.BasicCookieStore;
 import org.apache.hc.client5.http.cookie.Cookie;
-import org.apache.hc.client5.http.impl.DefaultRedirectStrategy;
-import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.cookie.BasicClientCookie;
-import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
-import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
-import org.apache.hc.client5.http.impl.routing.DefaultProxyRoutePlanner;
-import org.apache.hc.client5.http.protocol.HttpClientContext;
-import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
 import org.apache.hc.client5.http.utils.DateUtils;
 import org.apache.hc.core5.http.Header;
-import org.apache.hc.core5.http.HttpHost;
 import org.apache.hc.core5.http.HttpVersion;
 import org.apache.hc.core5.http.URIScheme;
 import org.apache.hc.core5.http.message.BasicHeader;
-import org.apache.hc.core5.net.URIBuilder;
 import org.apache.hc.core5.util.Args;
 
 import java.net.URI;
 import java.util.*;
 
 import static org.apache.hc.core5.http.HttpHeaders.USER_AGENT;
-import static org.apache.hc.core5.util.Timeout.ofSeconds;
 import static xyz.migoo.simplehttp.HttpMethod.*;
 
 /**
  * @author xiaomi
- * Created at 2019/9/13 10:58
+ *         Created at 2019/9/13 10:58
  */
 public class Request {
-
-    private final static PoolingHttpClientConnectionManager POOLING_HTTP_CLIENT_CONNECTION_MANAGER =
-            PoolingHttpClientConnectionManagerBuilder.create()
-                    .setTlsSocketStrategy(DefaultClientTlsStrategy.createSystemDefault())
-                    .setMaxConnPerRoute(2)
-                    .setMaxConnTotal(20)
-                    .setDefaultTlsConfig(TlsConfig.DEFAULT)
-                    .build();
-
 
     private HttpRequest request;
     private Form query;
@@ -153,7 +126,7 @@ public class Request {
         cookie.setDomain(domain);
         cookie.setPath(path);
         cookie.setExpiryDate(DateUtils.toInstant(expiryDate));
-        return this.addCookie();
+        return this.addCookie(cookie);
     }
 
     public Request addCookie(String name, String value) {
@@ -198,44 +171,12 @@ public class Request {
         return this.proxy(new HttpProxy(scheme, host, port, username, password));
     }
 
-    Response execute(CloseableHttpClient client, HttpClientContext context) throws Exception {
-        if (query != null && !query.build().isEmpty()) {
-            request.setUri(new URIBuilder(request.getUri()).addParameters(query.build()).build());
-        }
-        return client.execute(request, context, new Response.ResponseHandler(context));
-    }
-
     public Response execute() throws Exception {
-        var builder = HttpClients.custom().setRedirectStrategy(new DefaultRedirectStrategy()).setConnectionManager(POOLING_HTTP_CLIENT_CONNECTION_MANAGER);
-        if (this.proxy != null) {
-            var proxy = new HttpHost(this.proxy.getScheme(), this.proxy.getHost(), this.proxy.getPort());
-            builder.setRoutePlanner(new DefaultProxyRoutePlanner(proxy));
-            if (this.proxy.hasUsernameAndPassword()) {
-                var provider = new BasicCredentialsProvider();
-                provider.setCredentials(new AuthScope(proxy), new UsernamePasswordCredentials(this.proxy.getUsername(), this.proxy.getPassword().toCharArray()));
-                builder.setDefaultCredentialsProvider(provider);
-            }
-        }
-        return execute(builder.build());
+        return SimpleHttp.getDefault().execute(this);
     }
 
-    public Response execute(CloseableHttpClient client) throws Exception {
-        var localContext = HttpClientContext.create();
-        var builder = client instanceof Configurable c ? RequestConfig.copy(c.getConfig()) : RequestConfig.custom();
-        builder.setExpectContinueEnabled(Objects.nonNull(useExpectContinue) ? useExpectContinue : false);
-        builder.setConnectionRequestTimeout(Objects.nonNull(socketTimeout) ? ofSeconds(socketTimeout) : ofSeconds(180));
-        builder.setResponseTimeout(Objects.nonNull(readTimeout) ? ofSeconds(readTimeout) : ofSeconds(180));
-        if (Objects.nonNull(cookies) && !cookies.isEmpty()) {
-            var cookieStore = new BasicCookieStore();
-            cookies.forEach(cookieStore::addCookie);
-            localContext.setCookieStore(cookieStore);
-        }
-        builder.setRedirectsEnabled(Objects.nonNull(redirectsEnabled) ? redirectsEnabled : true);
-        localContext.setRequestConfig(builder.build());
-        if (Objects.nonNull(query) && !query.build().isEmpty()) {
-            request.setUri(new URIBuilder(request.getUri()).addParameters(query.build()).build());
-        }
-        return execute(client, localContext);
+    public Response execute(SimpleHttp client) throws Exception {
+        return client.execute(this);
     }
 
     public Request useExpectContinue() {
@@ -269,7 +210,7 @@ public class Request {
     }
 
     public byte[] body() {
-        return body == null ? new byte[]{} : body;
+        return body == null ? new byte[] {} : body;
     }
 
     public String query() {
@@ -316,5 +257,37 @@ public class Request {
 
     public String version() {
         return request.getVersion().toString();
+    }
+
+    HttpRequest httpRequest() {
+        return request;
+    }
+
+    Integer getSocketTimeout() {
+        return socketTimeout;
+    }
+
+    Integer getReadTimeout() {
+        return readTimeout;
+    }
+
+    Boolean getUseExpectContinue() {
+        return useExpectContinue;
+    }
+
+    Boolean getRedirectsEnabled() {
+        return redirectsEnabled;
+    }
+
+    HttpProxy getProxy() {
+        return proxy;
+    }
+
+    List<Cookie> getCookies() {
+        return cookies;
+    }
+
+    Form getQuery() {
+        return query;
     }
 }

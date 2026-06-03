@@ -39,7 +39,7 @@ import java.util.*;
  * RequestJsonEntity类的TestNG单元测试
  *
  * @author xiaomi
- * Created at 2025/10/27
+ *         Created at 2025/10/27
  */
 public class RequestJsonEntityTest {
 
@@ -148,9 +148,7 @@ public class RequestJsonEntityTest {
                 "age", 30,
                 "address", Map.of(
                         "street", "123 Main St",
-                        "city", "New York"
-                )
-        ));
+                        "city", "New York")));
         data.put("hobbies", List.of("reading", "swimming"));
         data.put("active", true);
         data.put("score", 95.5);
@@ -228,5 +226,73 @@ public class RequestJsonEntityTest {
         Assert.assertTrue(json.contains("\"nullValue\": null"));
         Assert.assertTrue(json.contains("\"list\": ["));
         Assert.assertTrue(json.contains("\"nestedMap\": {"));
+    }
+
+    /**
+     * 测试递归深度超过最大限制时抛出异常
+     */
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "JSON serialization depth exceeds maximum: 50")
+    public void testToJsonExceedsMaxDepth() {
+        // 构造超过50层的嵌套Map
+        Map<String, Object> deepMap = new HashMap<>();
+        Map<String, Object> current = deepMap;
+        for (int i = 0; i < 55; i++) {
+            Map<String, Object> next = new HashMap<>();
+            current.put("level" + i, next);
+            current = next;
+        }
+        current.put("end", "value");
+        RequestJsonEntity.toJson(deepMap);
+    }
+
+    /**
+     * 测试递归深度超过最大限制时抛出异常（List嵌套）
+     */
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "JSON serialization depth exceeds maximum: 50")
+    public void testToJsonListExceedsMaxDepth() {
+        // 构造超过50层的嵌套List
+        List<Object> deepList = new ArrayList<>();
+        List<Object> current = deepList;
+        for (int i = 0; i < 55; i++) {
+            List<Object> next = new ArrayList<>();
+            current.add(next);
+            current = next;
+        }
+        current.add("end");
+        RequestJsonEntity.toJson(deepList);
+    }
+
+    /**
+     * 测试JSON序列化时特殊字符的转义处理
+     */
+    @Test
+    public void testSpecialCharacterEscaping() {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("quote", "Hello \"World\"");
+        data.put("backslash", "path\\to\\file");
+        data.put("newline", "line1\nline2");
+        data.put("carriage", "line1\rline2");
+        data.put("tab", "col1\tcol2");
+
+        String json = RequestJsonEntity.toJson(data);
+
+        Assert.assertTrue(json.contains("\"quote\": \"Hello \\\"World\\\"\""));
+        Assert.assertTrue(json.contains("\"backslash\": \"path\\\\to\\\\file\""));
+        Assert.assertTrue(json.contains("\"newline\": \"line1\\nline2\""));
+        Assert.assertTrue(json.contains("\"carriage\": \"line1\\rline2\""));
+        Assert.assertTrue(json.contains("\"tab\": \"col1\\tcol2\""));
+    }
+
+    /**
+     * 测试JSON key中包含特殊字符时的转义处理
+     */
+    @Test
+    public void testSpecialCharacterInKey() {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("key\"quoted", "value");
+
+        String json = RequestJsonEntity.toJson(data);
+
+        Assert.assertTrue(json.contains("\"key\\\"quoted\": \"value\""));
     }
 }

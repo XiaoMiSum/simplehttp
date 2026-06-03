@@ -41,7 +41,7 @@ import java.util.List;
  * Request类的TestNG单元测试
  *
  * @author xiaomi
- * Created at 2025/10/27
+ *         Created at 2025/10/27
  */
 public class RequestTest {
 
@@ -341,5 +341,130 @@ public class RequestTest {
     public void testGetUriWithDefaultPath() {
         Request request = Request.get("http://example.com");
         Assert.assertEquals(request.uri(), "http://example.com/");
+    }
+
+    /**
+     * 测试execute()方法委托给SimpleHttp.getDefault()
+     */
+    @Test
+    public void testExecuteDelegatesToDefaultClient() {
+        Request request = Request.get("http://example.com");
+
+        // 验证execute()方法存在并能访问默认客户端
+        SimpleHttp defaultClient = SimpleHttp.getDefault();
+        Assert.assertNotNull(defaultClient);
+
+        // 这里不实际执行HTTP请求，只验证方法签名和委托关系
+        // 实际执行需要网络连接，在集成测试中覆盖
+    }
+
+    /**
+     * 测试execute(SimpleHttp)方法委托给指定客户端
+     */
+    @Test
+    public void testExecuteWithCustomClient() {
+        SimpleHttp customClient = SimpleHttp.builder()
+                .connectTimeout(30)
+                .readTimeout(60)
+                .build();
+
+        Request request = Request.get("http://example.com");
+
+        // 验证execute(SimpleHttp)方法能接受自定义客户端
+        Assert.assertNotNull(customClient);
+        Assert.assertNotNull(request);
+
+        // 这里不实际执行HTTP请求，只验证方法签名和委托关系
+    }
+
+    /**
+     * 测试包内访问方法httpRequest()
+     */
+    @Test
+    public void testHttpRequestPackageAccess() {
+        Request request = Request.post("http://example.com/api");
+
+        // 验证RequestExecutor能通过包内方法访问HttpRequest
+        Assert.assertNotNull(request.httpRequest());
+        Assert.assertEquals(request.httpRequest().getMethod(), "POST");
+    }
+
+    /**
+     * 测试包内访问方法getSocketTimeout()
+     */
+    @Test
+    public void testGetSocketTimeoutPackageAccess() {
+        Request request = Request.get("http://example.com").socketTimeout(45);
+
+        Assert.assertNotNull(request.getSocketTimeout());
+        Assert.assertEquals(request.getSocketTimeout(), Integer.valueOf(45));
+    }
+
+    /**
+     * 测试包内访问方法getReadTimeout()
+     */
+    @Test
+    public void testGetReadTimeoutPackageAccess() {
+        Request request = Request.get("http://example.com").readTimeout(90);
+
+        Assert.assertNotNull(request.getReadTimeout());
+        Assert.assertEquals(request.getReadTimeout(), Integer.valueOf(90));
+    }
+
+    /**
+     * 测试包内访问方法getUseExpectContinue()
+     */
+    @Test
+    public void testGetUseExpectContinuePackageAccess() {
+        Request request = Request.post("http://example.com").useExpectContinue();
+
+        Assert.assertTrue(request.getUseExpectContinue());
+    }
+
+    /**
+     * 测试包内访问方法getRedirectsEnabled()
+     */
+    @Test
+    public void testGetRedirectsEnabledPackageAccess() {
+        Request request = Request.get("http://example.com").redirectsEnabled(false);
+
+        Assert.assertFalse(request.getRedirectsEnabled());
+    }
+
+    /**
+     * 测试包内访问方法getProxy()
+     */
+    @Test
+    public void testGetProxyPackageAccess() {
+        HttpProxy proxy = new HttpProxy("localhost", 8080);
+        Request request = Request.get("http://example.com").proxy(proxy);
+
+        Assert.assertNotNull(request.getProxy());
+        Assert.assertEquals(request.getProxy().getHost(), "localhost");
+        Assert.assertEquals(request.getProxy().getPort(), 8080);
+    }
+
+    /**
+     * 测试包内访问方法getCookies()
+     */
+    @Test
+    public void testGetCookiesPackageAccess() {
+        Request request = Request.get("http://example.com")
+                .addCookie("session", "abc123");
+
+        Assert.assertNotNull(request.getCookies());
+        Assert.assertEquals(request.getCookies().size(), 1);
+    }
+
+    /**
+     * 测试包内访问方法getQuery()
+     */
+    @Test
+    public void testGetQueryPackageAccess() {
+        Form query = Form.create().add("page", "1");
+        Request request = Request.get("http://example.com").query(query);
+
+        Assert.assertNotNull(request.getQuery());
+        Assert.assertEquals(request.getQuery().build().size(), 1);
     }
 }

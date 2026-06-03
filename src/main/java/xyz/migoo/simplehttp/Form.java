@@ -40,7 +40,7 @@ import java.util.Map;
  * 支持添加键值对参数，并可转换为NameValuePair列表
  *
  * @author xiaomi
- * Created at 2019/9/13 11:03
+ *         Created at 2019/9/13 11:03
  */
 public class Form {
 
@@ -103,7 +103,15 @@ public class Form {
      * @return 当前表单实例，支持链式调用
      */
     public Form add(Map<String, Object> data) {
-        data.forEach((key, value) -> this.add(key, value == null ? "" : String.valueOf(value)));
+        if (data == null) {
+            throw new IllegalArgumentException("Form data map cannot be null");
+        }
+        data.forEach((key, value) -> {
+            if (key == null || key.isEmpty()) {
+                return;
+            }
+            this.add(key, value == null ? "" : String.valueOf(value));
+        });
         return this;
     }
 
@@ -127,9 +135,9 @@ public class Form {
         sb.append("{");
         for (int i = 0; i < data.size(); i++) {
             var pair = data.get(i);
-            sb.append("\"").append(pair.getName()).append("\": ");
+            sb.append("\"").append(escapeJson(pair.getName())).append("\": ");
             if (pair.getValue() != null) {
-                sb.append("\"").append(pair.getValue()).append("\"");
+                sb.append("\"").append(escapeJson(pair.getValue())).append("\"");
             } else {
                 sb.append(pair.getValue());
             }
@@ -139,5 +147,22 @@ public class Form {
         }
         sb.append("}");
         return sb.toString();
+    }
+
+    /**
+     * 对JSON字符串中的特殊字符进行转义
+     *
+     * @param value 原始字符串
+     * @return 转义后的字符串
+     */
+    private static String escapeJson(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
     }
 }

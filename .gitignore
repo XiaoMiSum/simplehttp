@@ -3,3 +3,22 @@
 *.iml
 /target
 /doc
+
+# GPG keys (never commit these!)
+*.key
+*.gpg
+private.key
+secret.key
+
+# Maven settings with credentials
+.m2/
+settings.xml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+temp*.txt
+*.tmp
+*.bak

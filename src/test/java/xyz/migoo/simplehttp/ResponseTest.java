@@ -50,7 +50,7 @@ import java.util.List;
  * Response类的TestNG单元测试
  *
  * @author xiaomi
- * Created at 2025/11/06
+ *         Created at 2025/11/06
  */
 public class ResponseTest {
 
@@ -225,6 +225,9 @@ public class ResponseTest {
         // 创建HttpClientContext
         HttpClientContext context = HttpClientContext.create();
 
+        // 记录开始时间（在创建handler之前）
+        long beforeHandling = System.currentTimeMillis();
+
         // 创建ResponseHandler
         Response.ResponseHandler handler = new Response.ResponseHandler(context);
 
@@ -236,7 +239,6 @@ public class ResponseTest {
         httpResponse.setEntity(new org.apache.hc.core5.http.io.entity.StringEntity("Test response body"));
 
         // 处理响应
-        long beforeHandling = System.currentTimeMillis();
         Response response = handler.handleResponse(httpResponse);
         long afterHandling = System.currentTimeMillis();
 

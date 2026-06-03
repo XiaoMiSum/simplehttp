@@ -42,9 +42,14 @@ import static org.apache.hc.core5.http.ContentType.APPLICATION_JSON;
  * 继承自RequestEntity，可以将Map或JSON字符串转换为JSON格式的请求体
  *
  * @author xiaomi
- * Created in 2021/7/21 19:52
+ *         Created in 2021/7/21 19:52
  */
 public class RequestJsonEntity extends RequestEntity {
+
+    /**
+     * JSON序列化最大递归深度
+     */
+    private static final int MAX_DEPTH = 50;
 
     /**
      * 根据JSON字符串构造一个新的JSON请求实体
@@ -81,20 +86,7 @@ public class RequestJsonEntity extends RequestEntity {
      * @return JSON字符串
      */
     static String toJson(Map<?, ?> body) {
-        var sb = new StringBuilder("{");
-        for (Object key : body.keySet()) {
-            var value = body.get(key);
-            if (sb.length() > 1) {
-                sb.append(",");
-            }
-            sb.append("\"").append(key).append("\": ");
-            sb.append(switch (value) {
-                case Map<?, ?> object -> toJson(object);
-                case List<?> objects -> toJson(objects);
-                case null, default -> getValue(value);
-            });
-        }
-        return sb.append("}").toString();
+        return toJson(body, 0);
     }
 
     /**
@@ -104,14 +96,55 @@ public class RequestJsonEntity extends RequestEntity {
      * @return JSON字符串
      */
     static String toJson(List<?> list) {
+        return toJson(list, 0);
+    }
+
+    /**
+     * 将Map对象转换为JSON字符串（带递归深度检查）
+     *
+     * @param body  要转换的Map对象
+     * @param depth 当前递归深度
+     * @return JSON字符串
+     */
+    private static String toJson(Map<?, ?> body, int depth) {
+        if (depth > MAX_DEPTH) {
+            throw new IllegalArgumentException("JSON serialization depth exceeds maximum: " + MAX_DEPTH);
+        }
+        var sb = new StringBuilder("{");
+        for (Object key : body.keySet()) {
+            var value = body.get(key);
+            if (sb.length() > 1) {
+                sb.append(",");
+            }
+            sb.append("\"").append(escapeJson(String.valueOf(key))).append("\": ");
+            sb.append(switch (value) {
+                case Map<?, ?> object -> toJson(object, depth + 1);
+                case List<?> objects -> toJson(objects, depth + 1);
+                case null, default -> getValue(value);
+            });
+        }
+        return sb.append("}").toString();
+    }
+
+    /**
+     * 将List对象转换为JSON字符串（带递归深度检查）
+     *
+     * @param list  要转换的List对象
+     * @param depth 当前递归深度
+     * @return JSON字符串
+     */
+    private static String toJson(List<?> list, int depth) {
+        if (depth > MAX_DEPTH) {
+            throw new IllegalArgumentException("JSON serialization depth exceeds maximum: " + MAX_DEPTH);
+        }
         StringBuilder sb = new StringBuilder("[");
         for (Object obj : list) {
             if (sb.length() > 1) {
                 sb.append(",");
             }
             sb.append(switch (obj) {
-                case Map<?, ?> object -> toJson(object);
-                case List<?> objects -> toJson(objects);
+                case Map<?, ?> object -> toJson(object, depth + 1);
+                case List<?> objects -> toJson(objects, depth + 1);
                 case null, default -> getValue(obj);
             });
         }
@@ -125,6 +158,24 @@ public class RequestJsonEntity extends RequestEntity {
      * @return 值的字符串表示形式
      */
     private static Object getValue(Object value) {
-        return value == null || value instanceof Number || value instanceof Boolean ? value : "\"" + value + "\"";
+        return value == null || value instanceof Number || value instanceof Boolean ? value
+                : "\"" + escapeJson(String.valueOf(value)) + "\"";
+    }
+
+    /**
+     * 对JSON字符串中的特殊字符进行转义
+     *
+     * @param value 原始字符串
+     * @return 转义后的字符串
+     */
+    static String escapeJson(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
     }
 }

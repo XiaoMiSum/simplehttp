@@ -35,7 +35,7 @@ import java.util.Objects;
  * 包括代理服务器地址、端口、认证信息等
  *
  * @author xiaomi
- * Created at 2020/1/4 12:36
+ *         Created at 2020/1/4 12:36
  */
 public class HttpProxy {
 
@@ -218,7 +218,7 @@ public class HttpProxy {
                 "\"host\": \"" + (Objects.isNull(host) ? "" : host) + "\", " +
                 "\"port\": \"" + (Objects.isNull(port) || port <= 0 ? "" : port) + "\", " +
                 "\"username\": \"" + (Objects.isNull(username) ? "" : username) + "\", " +
-                "\"password\": \"" + (Objects.isNull(password) ? "" : password) + "\"" +
+                "\"password\": \"" + (Objects.isNull(password) ? "" : "***") + "\"" +
                 "}";
     }
 }

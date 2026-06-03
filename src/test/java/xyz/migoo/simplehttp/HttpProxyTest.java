@@ -35,7 +35,7 @@ import org.testng.annotations.Test;
  * HttpProxy类的TestNG单元测试
  *
  * @author xiaomi
- * Created at 2025/10/27
+ *         Created at 2025/10/27
  */
 public class HttpProxyTest {
 
@@ -202,7 +202,7 @@ public class HttpProxyTest {
         Assert.assertTrue(proxyString.contains("\"host\": \"localhost\""));
         Assert.assertTrue(proxyString.contains("\"port\": \"8080\""));
         Assert.assertTrue(proxyString.contains("\"username\": \"user\""));
-        Assert.assertTrue(proxyString.contains("\"password\": \"password\""));
+        Assert.assertTrue(proxyString.contains("\"password\": \"***\""));
     }
 
     /**

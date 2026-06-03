@@ -14,7 +14,7 @@ import static xyz.migoo.simplehttp.RequestJsonEntity.toJson;
 
 /**
  * @author xiaomi
- * Created in 2021/7/21 19:50
+ *         Created in 2021/7/21 19:50
  */
 public abstract class RequestEntity {
 
@@ -121,7 +121,16 @@ public abstract class RequestEntity {
         if (data != null && !data.isEmpty()) {
             data.forEach((key, value) -> builder.addTextBody(key, Optional.ofNullable(value).orElse("").toString()));
         }
-        files.forEach(item -> builder.addBinaryBody(item.getName(), new File(item.getValue())));
+        files.forEach(item -> {
+            var file = new File(item.getValue());
+            if (!file.exists()) {
+                throw new IllegalArgumentException("File not found: " + item.getValue());
+            }
+            if (!file.canRead()) {
+                throw new IllegalArgumentException("File not readable: " + item.getValue());
+            }
+            builder.addBinaryBody(item.getName(), file);
+        });
         var content = Objects.isNull(data) ? Map.of("binary", files.toString())
                 : Map.of("binary", Map.of("binary", files.toString()), "data", data);
         return new RequestBinaryEntity(builder.build(), toJson(content).getBytes(StandardCharsets.UTF_8));

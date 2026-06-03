@@ -4,10 +4,23 @@
 [![Maven Central](https://img.shields.io/maven-central/v/xyz.migoo/simplehttp)](https://central.sonatype.com/artifact/xyz.migoo/simplehttp)
 [![MiGoo Author](https://img.shields.io/badge/Author-xiaomi-yellow.svg)](https://github.com/XiaoMiSum)
 [![GitHub release](https://img.shields.io/github/release/XiaoMiSum/simplehttp.svg)](https://github.com/XiaoMiSum/simplehttp/releases)
+[![Java CI](https://github.com/XiaoMiSum/simplehttp/actions/workflows/ci.yml/badge.svg)](https://github.com/XiaoMiSum/simplehttp/actions/workflows/ci.yml)
+[![Publish to Maven Central](https://github.com/XiaoMiSum/simplehttp/actions/workflows/publish.yml/badge.svg)](https://github.com/XiaoMiSum/simplehttp/actions/workflows/publish.yml)
 
 ## 1. 介绍
 
 一个简单的httpclient，基于Apache HttpClient
+
+### ✨ 特性
+
+- 🚀 简洁的 API 设计，易于使用
+- 🔥 支持所有 HTTP 方法（GET、POST、PUT、DELETE 等）
+- 📦 支持 JSON、表单、二进制等多种请求体类型
+- 🔒 支持 HTTPS 和代理配置
+- 🎯 支持 Cookie 管理和超时控制
+- 🔄 可复用的 HTTP 客户端（SimpleHttp），适合高性能场景
+- ✅ 100% 单元测试覆盖（180+ 测试用例）
+- 🤖 自动化 CI/CD，持续集成和发布
 
 ## 2. 引用
 

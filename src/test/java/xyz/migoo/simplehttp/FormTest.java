@@ -39,7 +39,7 @@ import java.util.Map;
  * Form类的TestNG单元测试
  *
  * @author xiaomi
- * Created at 2025/10/27
+ *         Created at 2025/10/27
  */
 public class FormTest {
 
@@ -171,5 +171,67 @@ public class FormTest {
         Assert.assertFalse(formString.isEmpty());
         Assert.assertTrue(formString.contains("\"name\": \"test\""));
         Assert.assertTrue(formString.contains("\"value\": null"));
+    }
+
+    /**
+     * 测试添加null map时抛出异常
+     */
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "Form data map cannot be null")
+    public void testAddNullMapThrowsException() {
+        Form form = Form.create();
+        form.add((Map<String, Object>) null);
+    }
+
+    /**
+     * 测试添加包含null key的Map时跳过该条目
+     */
+    @Test
+    public void testAddMapWithNullKeySkipsEntry() {
+        Form form = Form.create();
+
+        Map<String, Object> data = new HashMap<>();
+        data.put(null, "value1");
+        data.put("key2", "value2");
+        data.put("", "value3");
+
+        form.add(data);
+
+        List<?> dataList = form.build();
+        // null key 和 空字符串 key 都应被跳过
+        Assert.assertEquals(dataList.size(), 1);
+    }
+
+    /**
+     * 测试表单转换为字符串时特殊字符的转义处理
+     */
+    @Test
+    public void testToStringWithSpecialCharacters() {
+        Form form = Form.create();
+        form.add("msg", "Hello \"World\"");
+        form.add("path", "C:\\Users\\test");
+        form.add("multiline", "line1\nline2");
+        form.add("withTab", "col1\tcol2");
+        form.add("withCR", "line1\rline2");
+
+        String formString = form.toString();
+
+        Assert.assertTrue(formString.contains("\"msg\": \"Hello \\\"World\\\"\""));
+        Assert.assertTrue(formString.contains("\"path\": \"C:\\\\Users\\\\test\""));
+        Assert.assertTrue(formString.contains("\"multiline\": \"line1\\nline2\""));
+        Assert.assertTrue(formString.contains("\"withTab\": \"col1\\tcol2\""));
+        Assert.assertTrue(formString.contains("\"withCR\": \"line1\\rline2\""));
+    }
+
+    /**
+     * 测试表单key中包含特殊字符时的转义处理
+     */
+    @Test
+    public void testToStringWithSpecialCharacterInKey() {
+        Form form = Form.create();
+        form.add("key\"name", "value");
+
+        String formString = form.toString();
+
+        Assert.assertTrue(formString.contains("\"key\\\"name\": \"value\""));
     }
 }

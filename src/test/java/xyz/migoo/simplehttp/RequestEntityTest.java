@@ -42,7 +42,7 @@ import java.util.Map;
  * RequestEntity抽象类的TestNG单元测试
  *
  * @author xiaomi
- * Created at 2025/10/27
+ *         Created at 2025/10/27
  */
 public class RequestEntityTest {
 
@@ -191,7 +191,7 @@ public class RequestEntityTest {
      */
     @Test
     public void testProtoEntityWithBytes() {
-        byte[] bytes = new byte[]{1, 2, 3, 4, 5};
+        byte[] bytes = new byte[] { 1, 2, 3, 4, 5 };
         RequestEntity entity = RequestEntity.proto(bytes);
 
         Assert.assertNotNull(entity);
@@ -205,7 +205,7 @@ public class RequestEntityTest {
      */
     @Test
     public void testProtoEntityWithSupplier() {
-        byte[] bytes = new byte[]{1, 2, 3, 4, 5};
+        byte[] bytes = new byte[] { 1, 2, 3, 4, 5 };
         RequestEntity entity = RequestEntity.proto(() -> bytes);
 
         Assert.assertNotNull(entity);
@@ -347,6 +347,302 @@ public class RequestEntityTest {
             Assert.assertNotNull(entity.getContent());
         } finally {
             if (tempFile.exists()) {
+                tempFile.delete();
+            }
+        }
+    }
+
+    /**
+     * 测试二进制实体创建 - 文件不存在时抛出异常
+     */
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "File not found: .*")
+    public void testBinaryEntityWithNonExistentFile() {
+        NameValuePair nvp = new NameValuePair() {
+            @Override
+            public String getName() {
+                return "file";
+            }
+
+            @Override
+            public String getValue() {
+                return "/non/existent/path/file.txt";
+            }
+        };
+
+        RequestEntity.binary(nvp);
+    }
+
+    /**
+     * 测试二进制实体创建 - 通过Supplier和Customizer
+     */
+    @Test
+    public void testBinaryEntityWithSupplierAndCustomizer() {
+        java.io.File tempFile = new java.io.File("temp_supplier.txt");
+        if (!tempFile.exists()) {
+            try {
+                tempFile.createNewFile();
+            } catch (Exception e) {
+                // 忽略异常
+            }
+        }
+
+        try {
+            NameValuePair nvp = new NameValuePair() {
+                @Override
+                public String getName() {
+                    return "file";
+                }
+
+                @Override
+                public String getValue() {
+                    return tempFile.getAbsolutePath();
+                }
+            };
+
+            RequestEntity entity = RequestEntity.binary(
+                    () -> nvp,
+                    data -> data.put("key", "value"));
+
+            Assert.assertNotNull(entity);
+            Assert.assertTrue(entity instanceof RequestBinaryEntity);
+            Assert.assertNotNull(entity.getEntity());
+            Assert.assertNotNull(entity.getContent());
+        } finally {
+            if (tempFile.exists()) {
+                tempFile.delete();
+            }
+        }
+    }
+
+    /**
+     * 测试二进制实体创建 - 通过NameValuePair和Map数据
+     */
+    @Test
+    public void testBinaryEntityWithNameValuePairAndMap() {
+        java.io.File tempFile = new java.io.File("temp_nvp_map.txt");
+        if (!tempFile.exists()) {
+            try {
+                tempFile.createNewFile();
+            } catch (Exception e) {
+                // 忽略异常
+            }
+        }
+
+        try {
+            NameValuePair nvp = new NameValuePair() {
+                @Override
+                public String getName() {
+                    return "file";
+                }
+
+                @Override
+                public String getValue() {
+                    return tempFile.getAbsolutePath();
+                }
+            };
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("username", "testuser");
+            data.put("password", "testpass");
+
+            RequestEntity entity = RequestEntity.binary(nvp, data);
+
+            Assert.assertNotNull(entity);
+            Assert.assertTrue(entity instanceof RequestBinaryEntity);
+            Assert.assertNotNull(entity.getEntity());
+            Assert.assertNotNull(entity.getContent());
+        } finally {
+            if (tempFile.exists()) {
+                tempFile.delete();
+            }
+        }
+    }
+
+    /**
+     * 测试二进制实体创建 - 通过Customizer列表和Customizer数据
+     */
+    @Test
+    public void testBinaryEntityWithBothCustomizers() {
+        java.io.File tempFile = new java.io.File("temp_both_customizers.txt");
+        if (!tempFile.exists()) {
+            try {
+                tempFile.createNewFile();
+            } catch (Exception e) {
+                // 忽略异常
+            }
+        }
+
+        try {
+            RequestEntity entity = RequestEntity.binary(
+                    files -> {
+                        files.add(new NameValuePair() {
+                            @Override
+                            public String getName() {
+                                return "file";
+                            }
+
+                            @Override
+                            public String getValue() {
+                                return tempFile.getAbsolutePath();
+                            }
+                        });
+                    },
+                    data -> {
+                        data.put("field1", "value1");
+                        data.put("field2", "value2");
+                    });
+
+            Assert.assertNotNull(entity);
+            Assert.assertTrue(entity instanceof RequestBinaryEntity);
+            Assert.assertNotNull(entity.getEntity());
+            Assert.assertNotNull(entity.getContent());
+        } finally {
+            if (tempFile.exists()) {
+                tempFile.delete();
+            }
+        }
+    }
+
+    /**
+     * 测试二进制实体创建 - 通过Supplier
+     */
+    @Test
+    public void testBinaryEntityWithSupplier() {
+        java.io.File tempFile = new java.io.File("temp_supplier_only.txt");
+        if (!tempFile.exists()) {
+            try {
+                tempFile.createNewFile();
+            } catch (Exception e) {
+                // 忽略异常
+            }
+        }
+
+        try {
+            NameValuePair nvp = new NameValuePair() {
+                @Override
+                public String getName() {
+                    return "file";
+                }
+
+                @Override
+                public String getValue() {
+                    return tempFile.getAbsolutePath();
+                }
+            };
+
+            RequestEntity entity = RequestEntity.binary(() -> nvp);
+
+            Assert.assertNotNull(entity);
+            Assert.assertTrue(entity instanceof RequestBinaryEntity);
+            Assert.assertNotNull(entity.getEntity());
+            Assert.assertNotNull(entity.getContent());
+        } finally {
+            if (tempFile.exists()) {
+                tempFile.delete();
+            }
+        }
+    }
+
+    /**
+     * 测试RequestEntity的getEntity方法
+     */
+    @Test
+    public void testGetEntity() {
+        RequestEntity entity = RequestEntity.json("{\"test\":\"value\"}");
+        Assert.assertNotNull(entity.getEntity());
+    }
+
+    /**
+     * 测试RequestEntity的getContent方法
+     */
+    @Test
+    public void testGetContent() {
+        String json = "{\"test\":\"value\"}";
+        RequestEntity entity = RequestEntity.json(json);
+        Assert.assertNotNull(entity.getContent());
+        Assert.assertEquals(new String(entity.getContent(), StandardCharsets.UTF_8), json);
+    }
+
+    /**
+     * 测试空Map创建JSON实体
+     */
+    @Test
+    public void testJsonEntityWithEmptyMap() {
+        Map<String, Object> data = new HashMap<>();
+        RequestEntity entity = RequestEntity.json(data);
+
+        Assert.assertNotNull(entity);
+        Assert.assertTrue(entity instanceof RequestJsonEntity);
+        Assert.assertNotNull(entity.getContent());
+    }
+
+    /**
+     * 测试空Map创建Form实体
+     */
+    @Test
+    public void testFormEntityWithEmptyMap() {
+        Map<String, Object> data = new HashMap<>();
+        RequestEntity entity = RequestEntity.form(data);
+
+        Assert.assertNotNull(entity);
+        Assert.assertTrue(entity instanceof RequestFormEntity);
+        Assert.assertNotNull(entity.getContent());
+    }
+
+    /**
+     * 测试空字符串创建文本实体
+     */
+    @Test
+    public void testTextEntityWithEmptyString() {
+        String text = "";
+        RequestEntity entity = RequestEntity.text(text);
+
+        Assert.assertNotNull(entity);
+        Assert.assertEquals(entity.getContent(), new byte[0]);
+    }
+
+    /**
+     * 测试空字节数组创建Proto实体
+     */
+    @Test
+    public void testProtoEntityWithEmptyBytes() {
+        byte[] bytes = new byte[0];
+        RequestEntity entity = RequestEntity.proto(bytes);
+
+        Assert.assertNotNull(entity);
+        Assert.assertEquals(entity.getContent(), bytes);
+    }
+
+    /**
+     * 测试二进制实体创建 - 文件不可读时抛出异常
+     */
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "File not readable: .*")
+    public void testBinaryEntityWithUnreadableFile() {
+        java.io.File tempFile = new java.io.File("temp_unreadable.txt");
+        try {
+            try {
+                tempFile.createNewFile();
+            } catch (Exception e) {
+                // 忽略异常
+            }
+            tempFile.setReadable(false);
+
+            NameValuePair nvp = new NameValuePair() {
+                @Override
+                public String getName() {
+                    return "file";
+                }
+
+                @Override
+                public String getValue() {
+                    return tempFile.getAbsolutePath();
+                }
+            };
+
+            RequestEntity.binary(nvp);
+        } finally {
+            if (tempFile.exists()) {
+                tempFile.setReadable(true);
                 tempFile.delete();
             }
         }
