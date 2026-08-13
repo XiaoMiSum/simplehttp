@@ -38,7 +38,7 @@
         <!-- 单元测试框架 -->
         <testng.version>7.9.0</testng.version>
 
-        <http.client.version>5.5</http.client.version>
+        <http.client.version>5.6.3</http.client.version>
 
         <compiler.version>3.13.0</compiler.version>
         <publishing.version>0.8.0</publishing.version>
