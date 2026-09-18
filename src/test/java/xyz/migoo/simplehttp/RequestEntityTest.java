@@ -626,6 +626,10 @@ public class RequestEntityTest {
                 // 忽略异常
             }
             tempFile.setReadable(false);
+            // Windows（尤其管理员权限）下 setReadable(false) 可能无效，此时跳过测试
+            if (tempFile.canRead()) {
+                throw new org.testng.SkipException("当前平台不支持设置文件不可读，跳过测试");
+            }
 
             NameValuePair nvp = new NameValuePair() {
                 @Override

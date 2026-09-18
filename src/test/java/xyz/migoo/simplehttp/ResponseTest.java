@@ -81,6 +81,63 @@ public class ResponseTest {
     }
 
     /**
+     * 测试isSuccessful方法：2xx 返回 true
+     */
+    @Test
+    public void testIsSuccessfulWith2xx() {
+        Response response = new Response(System.currentTimeMillis());
+        response.statusCode = 204;
+        Assert.assertTrue(response.isSuccessful());
+    }
+
+    /**
+     * 测试isSuccessful方法：非 2xx 返回 false
+     */
+    @Test
+    public void testIsSuccessfulWithNon2xx() {
+        Response response = new Response(System.currentTimeMillis());
+        response.statusCode = 500;
+        Assert.assertFalse(response.isSuccessful());
+    }
+
+    /**
+     * 测试header方法能按名称（忽略大小写）获取响应头
+     */
+    @Test
+    public void testHeaderByName() {
+        Response response = new Response(System.currentTimeMillis());
+        response.headers = new Header[] {
+                new BasicHeader("Content-Type", "application/json")
+        };
+        Assert.assertEquals(response.header("content-type"), "application/json");
+        Assert.assertEquals(response.header("Content-Type"), "application/json");
+    }
+
+    /**
+     * 测试header方法在响应头不存在时返回默认值
+     */
+    @Test
+    public void testHeaderWithDefaultValue() {
+        Response response = new Response(System.currentTimeMillis());
+        response.headers = new Header[] {
+                new BasicHeader("Content-Type", "application/json")
+        };
+        Assert.assertNull(response.header("X-Not-Exist"));
+        Assert.assertEquals(response.header("X-Not-Exist", "default"), "default");
+    }
+
+    /**
+     * 测试duration方法在未执行请求时不会抛出NPE
+     */
+    @Test
+    public void testDurationBeforeExecution() {
+        long startTime = System.currentTimeMillis();
+        Response response = new Response(startTime);
+        Assert.assertEquals(response.duration(), 0);
+        Assert.assertEquals(response.endTime(), startTime);
+    }
+
+    /**
      * 测试Response的headers方法
      */
     @Test

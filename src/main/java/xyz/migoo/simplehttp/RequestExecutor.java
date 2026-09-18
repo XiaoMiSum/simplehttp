@@ -1,24 +1,47 @@
+/*
+ *
+ *  * The MIT License (MIT)
+ *  *
+ *  * Copyright (c) 2025.  Lorem XiaoMiSum (mi_xiao@qq.com)
+ *  *
+ *  * Permission is hereby granted, free of charge, to any person obtaining
+ *  * a copy of this software and associated documentation files (the
+ *  * 'Software'), to deal in the Software without restriction, including
+ *  * without limitation the rights to use, copy, modify, merge, publish,
+ *  * distribute, sublicense, and/or sell copies of the Software, and to
+ *  * permit persons to whom the Software is furnished to do so, subject to
+ *  * the following conditions:
+ *  *
+ *  * The above copyright notice and this permission notice shall be
+ *  * included in all copies or substantial portions of the Software.
+ *  *
+ *  * THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
+ *  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ *  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ *  * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ *  * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ *  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ *  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ *
+ *
+ */
+
 package xyz.migoo.simplehttp;
 
-import org.apache.hc.client5.http.auth.AuthScope;
-import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.cookie.BasicCookieStore;
-import org.apache.hc.client5.http.impl.DefaultRedirectStrategy;
-import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.client5.http.impl.routing.DefaultProxyRoutePlanner;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
-import org.apache.hc.core5.http.HttpHost;
 import org.apache.hc.core5.net.URIBuilder;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Objects;
 
 import static org.apache.hc.core5.util.Timeout.ofSeconds;
 
 /**
+ * 请求执行器，基于 SimpleHttp 持有的共享客户端执行请求
+ *
  * @author xiaomi
  */
 class RequestExecutor {
@@ -29,39 +52,23 @@ class RequestExecutor {
         this.client = client;
     }
 
-    Response execute(Request request) throws Exception {
-        try (CloseableHttpClient httpClient = buildHttpClient(request)) {
-            HttpClientContext context = buildContext(request);
-            applyQueryParameters(request);
-            return httpClient.execute(request.httpRequest(), context, new Response.ResponseHandler(context));
-        }
-    }
-
-    private CloseableHttpClient buildHttpClient(Request request) {
-        var builder = HttpClients.custom()
-                .setRedirectStrategy(new DefaultRedirectStrategy())
-                .setConnectionManager(client.connectionManager());
+    Response execute(Request request) throws IOException, URISyntaxException {
+        HttpClientContext context = buildContext(request);
+        applyQueryParameters(request);
         HttpProxy proxy = request.getProxy() != null ? request.getProxy() : client.getDefaultProxy();
-        if (proxy != null) {
-            var httpHost = new HttpHost(proxy.getScheme(), proxy.getHost(), proxy.getPort());
-            builder.setRoutePlanner(new DefaultProxyRoutePlanner(httpHost));
-            if (proxy.hasUsernameAndPassword()) {
-                var provider = new BasicCredentialsProvider();
-                provider.setCredentials(new AuthScope(httpHost),
-                        new UsernamePasswordCredentials(proxy.getUsername(), proxy.getPassword().toCharArray()));
-                builder.setDefaultCredentialsProvider(provider);
-            }
-        }
-        return builder.build();
+        return client.httpClient(proxy).execute(request.httpRequest(), context, new Response.ResponseHandler(context));
     }
 
     private HttpClientContext buildContext(Request request) {
         var localContext = HttpClientContext.create();
         var builder = RequestConfig.custom();
-        builder.setExpectContinueEnabled(
-                Objects.nonNull(request.getUseExpectContinue()) ? request.getUseExpectContinue() : false);
-        builder.setConnectionRequestTimeout(ofSeconds(
-                Objects.nonNull(request.getSocketTimeout()) ? request.getSocketTimeout() : client.getConnectTimeout()));
+        if (Objects.nonNull(request.getUseExpectContinue())) {
+            builder.setExpectContinueEnabled(request.getUseExpectContinue());
+        }
+        if (Objects.nonNull(request.getSocketTimeout())) {
+            builder.setConnectTimeout(ofSeconds(request.getSocketTimeout()));
+        }
+        builder.setConnectionRequestTimeout(ofSeconds(client.getConnectTimeout()));
         builder.setResponseTimeout(ofSeconds(
                 Objects.nonNull(request.getReadTimeout()) ? request.getReadTimeout() : client.getReadTimeout()));
         builder.setRedirectsEnabled(Objects.nonNull(request.getRedirectsEnabled()) ? request.getRedirectsEnabled()

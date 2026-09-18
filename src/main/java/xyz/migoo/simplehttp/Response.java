@@ -37,6 +37,7 @@ import org.apache.hc.core5.http.io.HttpClientResponseHandler;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -137,7 +138,7 @@ public class Response {
      * @return 请求结束时间戳
      */
     public long endTime() {
-        return endTime;
+        return endTime != null ? endTime : startTime;
     }
 
     /**
@@ -146,7 +147,46 @@ public class Response {
      * @return 请求持续时间
      */
     public long duration() {
-        return endTime - startTime;
+        return endTime != null ? endTime - startTime : 0;
+    }
+
+    /**
+     * 检查请求是否成功（状态码 2xx）
+     *
+     * @return 状态码在 200-299 之间返回 true，否则返回 false
+     */
+    public boolean isSuccessful() {
+        return statusCode >= 200 && statusCode < 300;
+    }
+
+    /**
+     * 获取指定名称的第一个响应头
+     *
+     * @param name 响应头名称
+     * @return 响应头值，若不存在返回 {@code null}
+     */
+    public String header(String name) {
+        return header(name, null);
+    }
+
+    /**
+     * 获取指定名称的第一个响应头
+     *
+     * @param name         响应头名称
+     * @param defaultValue 未找到时返回的默认值
+     * @return 响应头值，若不存在返回默认值
+     */
+    public String header(String name, String defaultValue) {
+        if (headers == null) {
+            return defaultValue;
+        }
+        for (Header header : headers) {
+            if (header.getName().equalsIgnoreCase(name)) {
+                String value = header.getValue();
+                return value != null ? value : defaultValue;
+            }
+        }
+        return defaultValue;
     }
 
     /**
@@ -182,15 +222,14 @@ public class Response {
      *
      * @param path 文件路径
      * @return 文件路径
+     * @throws UncheckedIOException 如果写入文件时发生 IO 错误
      */
     public String save(String path) {
-        return text(byteToStringConverter -> {
-            try {
-                return Files.write(Path.of(path), bytes, CREATE, TRUNCATE_EXISTING).toString();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
+        try {
+            return Files.write(Path.of(path), bytes(), CREATE, TRUNCATE_EXISTING).toString();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to save response body to " + path, e);
+        }
     }
 
     /**
