@@ -1,93 +1,83 @@
-/*
- *
- *  * The MIT License (MIT)
- *  *
- *  * Copyright (c) 2025.  Lorem XiaoMiSum (mi_xiao@qq.com)
- *  *
- *  * Permission is hereby granted, free of charge, to any person obtaining
- *  * a copy of this software and associated documentation files (the
- *  * 'Software'), to deal in the Software without restriction, including
- *  * without limitation the rights to use, copy, modify, merge, publish,
- *  * distribute, sublicense, and/or sell copies of the Software, and to
- *  * permit persons to whom the Software is furnished to do so, subject to
- *  * the following conditions:
- *  *
- *  * The above copyright notice and this permission notice shall be
- *  * included in all copies or substantial portions of the Software.
- *  *
- *  * THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
- *  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- *  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
- *  * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
- *  * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
- *  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
- *  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- *
- *
- */
-
 package xyz.migoo.simplehttp;
 
-import org.apache.hc.client5.http.auth.AuthScope;
-import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
+import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.config.TlsConfig;
 import org.apache.hc.client5.http.impl.DefaultRedirectStrategy;
-import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
-import org.apache.hc.client5.http.impl.routing.DefaultProxyRoutePlanner;
 import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
-import org.apache.hc.core5.http.HttpHost;
-import org.apache.hc.core5.http.URIScheme;
-import org.apache.hc.core5.util.Args;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.nio.file.Path;
+
+import static org.apache.hc.core5.util.Timeout.ofSeconds;
 
 /**
- * HTTP客户端管理器，持有连接池、共享客户端和默认配置
+ * HTTP 客户端管理器：持有连接池与默认配置，并以<b>单个长生命周期</b> {@link CloseableHttpClient}
+ * 执行所有请求（连接池可复用，不会因单次请求关闭而失效）。
  * <p>
- * 无代理请求复用默认客户端；带代理的请求按代理配置缓存对应客户端，所有客户端共享同一个连接池。
+ * 同时负责装配真实报文采集链路（见 {@link Exchange}）：
+ * <ul>
+ *     <li>{@link ExchangeRecorder}：逐跳记录线上原样响应、实际路由、重定向/重试链</li>
+ *     <li>{@link WireRequestInterceptor}：记录发送前一刻的完整请求头与请求体</li>
+ * </ul>
+ * 链路可在 {@link Builder#captureEnabled(boolean)} 关闭，关闭后不安装上述拦截器，
+ * 运行时开销与裸 HttpClient 相当。
  *
  * @author xiaomi
  */
 public class SimpleHttp implements AutoCloseable {
 
+    /**
+     * 线上原始响应体默认采集上限（字节），超出即截断；{@code -1} 表示不限制
+     */
+    public static final long DEFAULT_MAX_CAPTURE_BYTES = 8L * 1024 * 1024;
+
     private static volatile SimpleHttp defaultInstance;
 
     private final PoolingHttpClientConnectionManager connectionManager;
-
-    private final CloseableHttpClient httpClient;
-
-    private final ConcurrentMap<ProxyKey, CloseableHttpClient> proxiedClients = new ConcurrentHashMap<>();
 
     private final int connectTimeout;
     private final int readTimeout;
     private final boolean redirectsEnabled;
     private final HttpProxy defaultProxy;
+    private final ExchangeListener exchangeListener;
+    private final long maxCaptureBytes;
+    private final Path captureDirectory;
+    private final boolean captureEnabled;
+
+    private volatile CloseableHttpClient httpClient;
+    private volatile boolean closed;
 
     private SimpleHttp(Builder builder) {
-        Args.check(builder.maxConnections > 0, "maxConnections must be positive");
-        Args.check(builder.maxConnectionsPerRoute > 0, "maxConnectionsPerRoute must be positive");
-        Args.check(builder.connectTimeout >= 0, "connectTimeout must not be negative");
-        Args.check(builder.readTimeout >= 0, "readTimeout must not be negative");
         this.connectionManager = PoolingHttpClientConnectionManagerBuilder.create()
                 .setTlsSocketStrategy(DefaultClientTlsStrategy.createSystemDefault())
                 .setMaxConnPerRoute(builder.maxConnectionsPerRoute)
                 .setMaxConnTotal(builder.maxConnections)
                 .setDefaultTlsConfig(TlsConfig.DEFAULT)
+                // 连接（含 TLS 握手）超时：HC5 已把 RequestConfig.connectTimeout 迁移到 ConnectionConfig
+                .setDefaultConnectionConfig(ConnectionConfig.custom()
+                        .setConnectTimeout(ofSeconds(builder.connectTimeout))
+                        .build())
                 .build();
-        this.httpClient = buildHttpClient(null);
         this.connectTimeout = builder.connectTimeout;
         this.readTimeout = builder.readTimeout;
         this.redirectsEnabled = builder.redirectsEnabled;
         this.defaultProxy = builder.proxy;
+        this.exchangeListener = builder.exchangeListener;
+        this.maxCaptureBytes = builder.maxCaptureBytes;
+        this.captureDirectory = builder.captureDirectory;
+        this.captureEnabled = builder.captureEnabled;
     }
 
+    /**
+     * 获取全局单例客户端。连接池由该单例持有，<b>不要调用其 {@link #close()}</b>，
+     * 进程内所有基于 {@code Request#execute()} 的请求都会复用它。
+     *
+     * @return 全局单例
+     */
     public static SimpleHttp getDefault() {
         if (defaultInstance == null) {
             synchronized (SimpleHttp.class) {
@@ -103,40 +93,49 @@ public class SimpleHttp implements AutoCloseable {
         return new Builder();
     }
 
-    public Response execute(Request request) throws IOException, URISyntaxException {
+    public Response execute(Request request) throws Exception {
         return new RequestExecutor(this).execute(request);
     }
 
-    CloseableHttpClient httpClient(HttpProxy proxy) {
-        if (proxy == null || proxy.getHost() == null) {
-            return httpClient;
+    /**
+     * 懒加载的共享客户端。连接池生命周期由本实例管理（{@link #close()}），
+     * 客户端关闭不会带走连接池（{@code connectionManagerShared}）。
+     */
+    CloseableHttpClient httpClient() {
+        var client = httpClient;
+        if (client == null) {
+            synchronized (this) {
+                if (closed) {
+                    throw new IllegalStateException("SimpleHttp client has been closed");
+                }
+                if (httpClient == null) {
+                    httpClient = buildHttpClient();
+                }
+                client = httpClient;
+            }
         }
-        return proxiedClients.computeIfAbsent(new ProxyKey(proxy), key -> buildHttpClient(key));
+        return client;
+    }
+
+    private CloseableHttpClient buildHttpClient() {
+        var builder = HttpClients.custom()
+                .setConnectionManager(connectionManager)
+                // 连接池归 SimpleHttp 所有，避免关闭客户端时把共享连接池一并 shutdown
+                .setConnectionManagerShared(true)
+                .setRedirectStrategy(new DefaultRedirectStrategy())
+                // 逐请求代理：从执行上下文读取，无需为每个代理重建客户端
+                .setRoutePlanner(new ContextProxyRoutePlanner());
+        if (captureEnabled) {
+            // 发送前一刻的最终请求头（含 Host/Content-Length 等客户端补全头）
+            builder.addRequestInterceptorLast(new WireRequestInterceptor());
+            // 执行链最内层：逐跳采集线上原样响应与实际路由
+            builder.addExecInterceptorLast(ExchangeRecorder.NAME, new ExchangeRecorder());
+        }
+        return builder.build();
     }
 
     PoolingHttpClientConnectionManager connectionManager() {
         return connectionManager;
-    }
-
-    private CloseableHttpClient buildHttpClient(ProxyKey proxy) {
-        var builder = HttpClients.custom()
-                .setConnectionManager(connectionManager)
-                .setRedirectStrategy(new DefaultRedirectStrategy());
-        if (proxy != null) {
-            var httpHost = new HttpHost(
-                    proxy.scheme(),
-                    proxy.host(),
-                    proxy.port());
-            builder.setRoutePlanner(new DefaultProxyRoutePlanner(httpHost));
-            if (proxy.username() != null && !proxy.username().isEmpty()
-                    && proxy.password() != null && !proxy.password().isEmpty()) {
-                var provider = new BasicCredentialsProvider();
-                provider.setCredentials(new AuthScope(httpHost),
-                        new UsernamePasswordCredentials(proxy.username(), proxy.password().toCharArray()));
-                builder.setDefaultCredentialsProvider(provider);
-            }
-        }
-        return builder.build();
     }
 
     int getConnectTimeout() {
@@ -155,44 +154,43 @@ public class SimpleHttp implements AutoCloseable {
         return defaultProxy;
     }
 
-    @Override
-    public void close() {
-        try {
-            if (httpClient != null) {
-                httpClient.close();
-            }
-            proxiedClients.values().forEach(simplehttp -> {
-                try {
-                    simplehttp.close();
-                } catch (IOException ignored) {
-                    // 关闭失败无需抛异常，连接池会随 JVM 回收
-                }
-            });
-        } catch (IOException ignored) {
-            // 关闭失败无需抛异常，连接池会随 JVM 回收
-        }
-        if (this == defaultInstance) {
-            defaultInstance = null;
-        }
+    ExchangeListener exchangeListener() {
+        return exchangeListener;
+    }
+
+    long maxCaptureBytes() {
+        return maxCaptureBytes;
+    }
+
+    Path captureDirectory() {
+        return captureDirectory;
+    }
+
+    boolean isCaptureEnabled() {
+        return captureEnabled;
     }
 
     /**
-     * 代理配置的缓存键，用于缓存对应的 HTTP 客户端
-     *
-     * @param scheme   代理协议
-     * @param host     代理主机地址
-     * @param port     代理端口号
-     * @param username 认证用户名
-     * @param password 认证密码
+     * 关闭客户端与连接池（幂等）。关闭后继续执行请求会抛出 {@link IllegalStateException}。
      */
-    private record ProxyKey(String scheme, String host, int port, String username, String password) {
-
-        ProxyKey(HttpProxy proxy) {
-            this(proxy.getScheme() != null ? proxy.getScheme() : URIScheme.HTTP.id,
-                    proxy.getHost(),
-                    proxy.getPort() != null ? proxy.getPort() : -1,
-                    proxy.getUsername(),
-                    proxy.getPassword());
+    @Override
+    public void close() {
+        synchronized (this) {
+            if (closed) {
+                return;
+            }
+            closed = true;
+            var client = httpClient;
+            httpClient = null;
+            if (client != null) {
+                try {
+                    // connectionManagerShared=true：这里不会关闭共享连接池
+                    client.close();
+                } catch (IOException ignored) {
+                    // 关闭失败不影响后续关闭连接池
+                }
+            }
+            connectionManager.close();
         }
     }
 
@@ -203,6 +201,10 @@ public class SimpleHttp implements AutoCloseable {
         private int readTimeout = 180;
         private boolean redirectsEnabled = true;
         private HttpProxy proxy = null;
+        private ExchangeListener exchangeListener = null;
+        private long maxCaptureBytes = DEFAULT_MAX_CAPTURE_BYTES;
+        private Path captureDirectory = null;
+        private boolean captureEnabled = true;
 
         public Builder maxConnections(int max) {
             this.maxConnections = max;
@@ -236,6 +238,46 @@ public class SimpleHttp implements AutoCloseable {
 
         public Builder proxy(HttpProxy proxy) {
             this.proxy = proxy;
+            return this;
+        }
+
+        /**
+         * 交换记录监听器：每次请求成功/失败后回调（调用线程）
+         */
+        public Builder exchangeListener(ExchangeListener listener) {
+            this.exchangeListener = listener;
+            return this;
+        }
+
+        /**
+         * 线上原始响应体/请求体的采集上限（字节），超出即截断并标记；{@code -1} 表示不限制
+         */
+        public Builder maxCaptureBytes(long maxCaptureBytes) {
+            this.maxCaptureBytes = maxCaptureBytes;
+            return this;
+        }
+
+        /**
+         * 把线上原始响应体落盘到指定目录（完成后写入，内存随即释放）
+         */
+        public Builder captureToFile(Path directory) {
+            this.captureDirectory = directory;
+            return this;
+        }
+
+        /**
+         * 是否装配真实报文采集链路，默认 {@code true}。
+         * <p>
+         * 设为 {@code false} 时不安装采集拦截器，因而不缓冲请求体/响应体、不复制请求头，
+         * 运行时开销与裸 HttpClient 相当。代价是 {@link Response#exchange()} 只保留耗时、
+         * HTTP 状态行、重定向链与失败阶段，{@link Exchange#attempts()} 为空，
+         * {@link Response#rawHeaders()} / {@link Response#rawBytes()} 亦为空数组。
+         *
+         * @param enabled 是否开启报文采集
+         * @return 构建器
+         */
+        public Builder captureEnabled(boolean enabled) {
+            this.captureEnabled = enabled;
             return this;
         }
 

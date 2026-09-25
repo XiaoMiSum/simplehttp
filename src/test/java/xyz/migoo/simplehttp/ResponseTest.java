@@ -229,12 +229,14 @@ public class ResponseTest {
 
     /**
      * 测试Response的cookies方法（没有cookie的情况）
+     * 2.3.0 起无 Cookie 时返回空列表而非 null
      */
     @Test
     public void testCookiesWithoutCookies() {
         Response response = new Response(System.currentTimeMillis());
         response.cookieStore = null;
-        Assert.assertNull(response.cookies());
+        Assert.assertNotNull(response.cookies());
+        Assert.assertTrue(response.cookies().isEmpty());
     }
 
     /**
