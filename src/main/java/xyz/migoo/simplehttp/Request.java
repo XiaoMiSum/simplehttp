@@ -272,10 +272,6 @@ public class Request {
         return this;
     }
 
-    public List<Cookie> cookies() {
-        return cookies;
-    }
-
     HttpRequest httpRequest() {
         return request;
     }
