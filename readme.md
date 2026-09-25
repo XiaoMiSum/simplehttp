@@ -11,6 +11,9 @@
 
 一个简单的httpclient，基于Apache HttpClient
 
+> 🔁 **从 2.2.7 升级？** 2.3.0 的重构背景、三层架构、双轨模型与**完整破坏性变更清单（23 个删除成员 + 5 个降级类型 + 5 项行为变更）**
+> 见 [docs/refactoring-2.3.0.md](docs/refactoring-2.3.0.md)。
+
 ### ✨ 特性
 
 - 🚀 简洁的 API 设计，易于使用
@@ -23,7 +26,7 @@
   重定向链、最终 URI、实际路由（target/proxy）、逐跳链路与耗时
 - 🧾 一键输出类 Charles/mitmproxy 风格的完整报文（`Exchange#toWireString()`）
 - ⚠️ 请求失败（连接拒绝、超时、TLS 失败）同样携带已采集的交换记录（`HttpExecutionException#exchange()`）
-- ✅ 200+ 测试用例，含真实 HTTP 链路集成测试（本地起服务端/代理验证线上报文）
+- ✅ 190+ 测试用例，含真实 HTTP 链路集成测试（本地起服务端/代理验证线上报文）
 - 🤖 自动化 CI/CD，持续集成和发布
 
 ## 2. 引用
