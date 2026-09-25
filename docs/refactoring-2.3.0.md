@@ -7,12 +7,12 @@
 
 ## 0. 概览
 
-| | 2.2.7（`d8ac71c`） | 2.3.0（`0dba401`） |
+| | 2.2.7 | 2.3.0 |
 |---|---|---|
 | public 顶层类型 | 13 | 14 |
 | public 成员声明 | 123 | **168** |
 | 可触及 public 成员 | — | **162** |
-| 测试用例 | 180 | 191 |
+| 测试用例 | 180 | 192 |
 | 能拿到的信息 | 只有结果视图 | 意图快照 + 逐跳线上报文 + 链路/耗时 |
 | `HttpProxy` | 可变 POJO | 不可变 |
 | `Request` 读取口 | 8 个 | **1 个**（`exchange()`） |
@@ -296,8 +296,9 @@ System.out.println(response.exchange().finalUri());        // 线上最终 URI�
 mvn -B verify
 ```
 
-- **191 tests, Failures 0, Errors 0**（基线 180）
+- **192 tests, Failures 0, Errors 0**（基线 180）
 - javadoc 构建**零告警**
+- `ReadmeCompilationTest` 用 `javax.tools` 真编译 readme 里的每一个 java 代码块，文档示例与实现不会脱节
 - 集成测试覆盖真实链路：本地起 HTTP 服务端 + 自建 TinyProxy，逐项断言线上的请求头/请求体/响应头/响应体、重定向链、路由、超时截断、`captureEnabled(false)`、失败归档
 
 覆盖缺口（尚未做）：HTTPS/TLS 链路（需证书夹具）、代理认证与 CONNECT 隧道、HTTP/2。
