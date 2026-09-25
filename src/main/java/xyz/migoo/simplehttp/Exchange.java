@@ -68,7 +68,7 @@ public final class Exchange {
      * 创建不含请求快照的交换记录（未经 {@link RequestExecutor} 执行时的兜底）
      */
     static Exchange detached(long maxCaptureBytes, Path captureDirectory) {
-        return new Exchange(new RequestSnapshot(null, null, null, null, null), maxCaptureBytes, captureDirectory);
+        return new Exchange(new RequestSnapshot(null, null, null, null, null, null), maxCaptureBytes, captureDirectory);
     }
 
     /**

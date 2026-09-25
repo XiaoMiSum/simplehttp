@@ -146,15 +146,15 @@ public class HttpMethodTest {
     public void testHttpMethodInRequest() {
         Request request = Request.create(HttpMethod.GET, "http://example.com");
         Assert.assertNotNull(request);
-        Assert.assertEquals(request.method(), "GET");
+        Assert.assertEquals(RequestSnapshot.of(request).method(), "GET");
 
         request = Request.create(HttpMethod.POST, "http://example.com");
-        Assert.assertEquals(request.method(), "POST");
+        Assert.assertEquals(RequestSnapshot.of(request).method(), "POST");
 
         request = Request.create(HttpMethod.PUT, "http://example.com");
-        Assert.assertEquals(request.method(), "PUT");
+        Assert.assertEquals(RequestSnapshot.of(request).method(), "PUT");
 
         request = Request.create(HttpMethod.DELETE, "http://example.com");
-        Assert.assertEquals(request.method(), "DELETE");
+        Assert.assertEquals(RequestSnapshot.of(request).method(), "DELETE");
     }
 }

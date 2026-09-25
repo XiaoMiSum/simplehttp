@@ -38,7 +38,7 @@ import org.apache.hc.core5.http.io.entity.ByteArrayEntity;
  * @author xiaomi
  * Created at 2022/8/19 22:31
  */
-public class RequestBytesEntity extends RequestEntity {
+class RequestBytesEntity extends RequestEntity {
 
     /**
      * 构造一个新的字节数组请求实体
@@ -46,7 +46,7 @@ public class RequestBytesEntity extends RequestEntity {
      * @param bytes 字节数组数据
      * @param contentType 内容类型（MIME类型）
      */
-    public RequestBytesEntity(byte[] bytes, String contentType) {
+    RequestBytesEntity(byte[] bytes, String contentType) {
         super(new ByteArrayEntity(bytes, ContentType.parse(contentType)), bytes);
     }
 }

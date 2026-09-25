@@ -44,7 +44,7 @@ import static org.apache.hc.core5.http.ContentType.APPLICATION_JSON;
  * @author xiaomi
  *         Created in 2021/7/21 19:52
  */
-public class RequestJsonEntity extends RequestEntity {
+class RequestJsonEntity extends RequestEntity {
 
     /**
      * JSON序列化最大递归深度
@@ -56,7 +56,7 @@ public class RequestJsonEntity extends RequestEntity {
      *
      * @param json JSON字符串
      */
-    public RequestJsonEntity(String json) {
+    RequestJsonEntity(String json) {
         this(json, APPLICATION_JSON);
     }
 
@@ -65,7 +65,7 @@ public class RequestJsonEntity extends RequestEntity {
      *
      * @param body JSON数据Map
      */
-    public RequestJsonEntity(Map<String, ?> body) {
+    RequestJsonEntity(Map<String, ?> body) {
         this(toJson(body));
     }
 
@@ -75,7 +75,7 @@ public class RequestJsonEntity extends RequestEntity {
      * @param content     内容字符串
      * @param contentType 内容类型
      */
-    public RequestJsonEntity(String content, ContentType contentType) {
+    RequestJsonEntity(String content, ContentType contentType) {
         super(new StringEntity(content, contentType), content.getBytes(StandardCharsets.UTF_8));
     }
 

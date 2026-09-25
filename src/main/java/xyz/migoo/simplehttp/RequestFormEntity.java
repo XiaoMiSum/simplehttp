@@ -40,14 +40,14 @@ import java.util.Map;
  * @author xiaomi
  * Created in 2021/7/21 19:52
  */
-public class RequestFormEntity extends RequestEntity {
+class RequestFormEntity extends RequestEntity {
 
     /**
      * 根据表单对象构造一个新的表单请求实体
      * 
      * @param form 表单对象
      */
-    public RequestFormEntity(Form form) {
+    RequestFormEntity(Form form) {
         super(new UrlEncodedFormEntity(form.build(), StandardCharsets.UTF_8), form.toString().getBytes(StandardCharsets.UTF_8));
     }
 
@@ -56,7 +56,7 @@ public class RequestFormEntity extends RequestEntity {
      * 
      * @param data 表单数据Map
      */
-    public RequestFormEntity(Map<String, Object> data) {
+    RequestFormEntity(Map<String, Object> data) {
         this(Form.create(data));
     }
 }

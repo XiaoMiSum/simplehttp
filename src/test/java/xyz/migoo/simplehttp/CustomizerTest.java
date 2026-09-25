@@ -110,7 +110,7 @@ public class CustomizerTest {
             headers.add(new org.apache.hc.core5.http.message.BasicHeader("X-Custom-2", "value2"));
         });
 
-        org.apache.hc.core5.http.Header[] headers = request.headers();
+        org.apache.hc.core5.http.Header[] headers = RequestSnapshot.of(request).headers();
         Assert.assertEquals(headers.length, 2);
     }
 }

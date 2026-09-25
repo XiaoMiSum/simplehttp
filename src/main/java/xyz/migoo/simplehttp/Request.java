@@ -5,7 +5,6 @@ import org.apache.hc.client5.http.impl.cookie.BasicClientCookie;
 import org.apache.hc.client5.http.utils.DateUtils;
 import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.HttpVersion;
-import org.apache.hc.core5.http.URIScheme;
 import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.hc.core5.util.Args;
 
@@ -16,6 +15,11 @@ import static org.apache.hc.core5.http.HttpHeaders.USER_AGENT;
 import static xyz.migoo.simplehttp.HttpMethod.*;
 
 /**
+ * 请求构建器：链式设置方法、URI、请求头、请求体与执行参数。
+ * <p>
+ * 这里只负责「写」；请求信息的读取统一走 {@link Exchange#request()}，
+ * 它是执行前的 {@link RequestSnapshot}，与线上报文 {@link Attempt} 对照使用。
+ *
  * @author xiaomi
  *         Created at 2019/9/13 10:58
  */
@@ -268,58 +272,20 @@ public class Request {
         return this;
     }
 
-    public byte[] body() {
-        return body == null ? new byte[] {} : body;
-    }
-
-    public String query() {
-        return query == null ? "" : query.toString();
-    }
-
-    public Header[] headers() {
-        return request.getHeaders();
-    }
-
     public String proxy() {
         return proxy == null ? null : proxy.toString();
-    }
-
-    public String method() {
-        return request.getMethod();
     }
 
     public List<Cookie> cookies() {
         return cookies;
     }
 
-    public String uri() {
-        StringBuilder buf = new StringBuilder();
-        if (request.getAuthority() != null) {
-            buf.append(request.getScheme() != null ? request.getScheme() : URIScheme.HTTP.id).append("://");
-            buf.append(request.getAuthority().getHostName());
-            if (request.getAuthority().getPort() > 0) {
-                buf.append(":").append(request.getAuthority().getPort());
-            }
-        }
-        var path = request.getPath();
-        if (path == null) {
-            buf.append("/");
-        } else {
-            if (!buf.isEmpty() && !path.startsWith("/")) {
-                buf.append("/");
-            }
-
-            buf.append(path);
-        }
-        return buf.toString();
-    }
-
-    public String version() {
-        return request.getVersion().toString();
-    }
-
     HttpRequest httpRequest() {
         return request;
+    }
+
+    byte[] getBody() {
+        return body == null ? new byte[] {} : body;
     }
 
     Integer getSocketTimeout() {

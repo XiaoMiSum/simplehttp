@@ -40,7 +40,7 @@ import java.net.URI;
  * @author xiaomi
  * Created at 2019/9/13 11:00
  */
-public class HttpRequest extends HttpUriRequestBase {
+class HttpRequest extends HttpUriRequestBase {
 
     @Serial
     private static final long serialVersionUID = -8216620506182835612L;
@@ -51,7 +51,7 @@ public class HttpRequest extends HttpUriRequestBase {
      * @param method HTTP方法（GET、POST等）
      * @param uri    请求URI
      */
-    public HttpRequest(String method, URI uri) {
+    HttpRequest(String method, URI uri) {
         super(method, uri);
     }
 

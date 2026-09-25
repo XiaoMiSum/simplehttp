@@ -281,7 +281,8 @@ public class ExchangeIntegrationTest {
         Assert.assertEquals(attempts.get(1).location(), "/hello");
         Assert.assertEquals(attempts.get(2).statusCode(), 200);
 
-        Assert.assertEquals(request.uri(), baseUrl + "/redirect1", "原始 Request 的 URI 不应被回写");
+        Assert.assertEquals(response.exchange().request().uri().toString(), baseUrl + "/redirect1",
+                "原始 Request 的 URI 不应被回写");
     }
 
     // ------------------------------------------------------------------ T5 请求头真实性
@@ -513,7 +514,10 @@ public class ExchangeIntegrationTest {
         var response = client.execute(request);
 
         Assert.assertEquals(response.statusCode(), 200);
-        Assert.assertEquals(request.uri(), baseUrl + "/echo", "原始 URI 不应被回写");
+        Assert.assertEquals(RequestSnapshot.of(request).uri().toString(), baseUrl + "/echo",
+                "原始 URI 不应被回写");
+        Assert.assertEquals(response.exchange().request().uri().toString(), baseUrl + "/echo",
+                "执行时的请求快照也不应含 query");
         var finalUri = response.exchange().finalUri().toString();
         Assert.assertTrue(finalUri.contains("page=1") && finalUri.contains("size=10"),
                 "线上最终 URI 应包含 query：" + finalUri);

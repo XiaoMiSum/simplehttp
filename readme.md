@@ -338,9 +338,9 @@ try (var client = SimpleHttp.builder().build()) {
 
 - `bytes()` / `text()` 是**自动解压后**的结果视图；`rawBytes()` / `rawHeaders()` 是**线上原样**的真实视图。
   gzip 响应在解压时会被客户端移除 `Content-Length`/`Content-Encoding`，因此判断压缩与线上长度请用 raw 系列 API。
-- `request.uri()` / `request.headers()` 表示用户的**原始意图**：query 参数不会回写到 `Request`，
-  最终 URI 请取 `exchange.finalUri()`；客户端自动补全的头请取 `attempt.wireHeaders()`。
-- `request.body()` 对 multipart 上传返回的是描述性 JSON，线上真实字节请取 `attempt.wireBody()`。
+- `exchange.request()` 是执行前的请求快照（`RequestSnapshot`），表示用户的**原始意图**：
+  query 参数不会回写，最终 URI 请取 `exchange.finalUri()`；客户端自动补全的头请取 `attempt.wireHeaders()`。
+- `exchange.request().body()` 对 multipart 上传返回的是描述性 JSON，线上真实字节请取 `attempt.wireBody()`。
 - 采集不影响发送：请求体不回读，流式（不可重复读）请求体同样按线上发送逐字节 tee 记录。
 - `Builder#captureEnabled(false)` 关闭报文采集：不安装采集拦截器，不缓冲请求体/响应体、不复制请求头，
   运行时开销与裸 HttpClient 相当。代价是 `exchange().attempts()` 为空、`rawHeaders()`/`rawBytes()` 为空数组，

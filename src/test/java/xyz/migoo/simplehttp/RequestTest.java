@@ -52,7 +52,7 @@ public class RequestTest {
     public void testCreateGetRequest() {
         Request request = Request.get("http://example.com");
         Assert.assertNotNull(request);
-        Assert.assertEquals(request.method(), "GET");
+        Assert.assertEquals(RequestSnapshot.of(request).method(), "GET");
     }
 
     /**
@@ -62,7 +62,7 @@ public class RequestTest {
     public void testCreatePostRequest() {
         Request request = Request.post("http://example.com");
         Assert.assertNotNull(request);
-        Assert.assertEquals(request.method(), "POST");
+        Assert.assertEquals(RequestSnapshot.of(request).method(), "POST");
     }
 
     /**
@@ -72,7 +72,7 @@ public class RequestTest {
     public void testCreatePutRequest() {
         Request request = Request.put("http://example.com");
         Assert.assertNotNull(request);
-        Assert.assertEquals(request.method(), "PUT");
+        Assert.assertEquals(RequestSnapshot.of(request).method(), "PUT");
     }
 
     /**
@@ -82,7 +82,7 @@ public class RequestTest {
     public void testCreateDeleteRequest() {
         Request request = Request.delete("http://example.com");
         Assert.assertNotNull(request);
-        Assert.assertEquals(request.method(), "DELETE");
+        Assert.assertEquals(RequestSnapshot.of(request).method(), "DELETE");
     }
 
     /**
@@ -92,7 +92,7 @@ public class RequestTest {
     public void testCreateHeadRequest() {
         Request request = Request.head("http://example.com");
         Assert.assertNotNull(request);
-        Assert.assertEquals(request.method(), "HEAD");
+        Assert.assertEquals(RequestSnapshot.of(request).method(), "HEAD");
     }
 
     /**
@@ -102,7 +102,7 @@ public class RequestTest {
     public void testCreatePatchRequest() {
         Request request = Request.patch("http://example.com");
         Assert.assertNotNull(request);
-        Assert.assertEquals(request.method(), "PATCH");
+        Assert.assertEquals(RequestSnapshot.of(request).method(), "PATCH");
     }
 
     /**
@@ -112,7 +112,7 @@ public class RequestTest {
     public void testCreateTraceRequest() {
         Request request = Request.trace("http://example.com");
         Assert.assertNotNull(request);
-        Assert.assertEquals(request.method(), "TRACE");
+        Assert.assertEquals(RequestSnapshot.of(request).method(), "TRACE");
     }
 
     /**
@@ -122,7 +122,7 @@ public class RequestTest {
     public void testCreateOptionsRequest() {
         Request request = Request.options("http://example.com");
         Assert.assertNotNull(request);
-        Assert.assertEquals(request.method(), "OPTIONS");
+        Assert.assertEquals(RequestSnapshot.of(request).method(), "OPTIONS");
     }
 
     /**
@@ -133,7 +133,7 @@ public class RequestTest {
         Request request = Request.get("http://example.com");
         Request result = request.http2();
         Assert.assertEquals(request, result);
-        Assert.assertEquals(request.version(), "HTTP/2.0");
+        Assert.assertEquals(RequestSnapshot.of(request).version(), "HTTP/2.0");
     }
 
     /**
@@ -144,7 +144,7 @@ public class RequestTest {
         Request request = Request.get("http://example.com");
         Request result = request.version(HttpVersion.HTTP_1_1);
         Assert.assertEquals(request, result);
-        Assert.assertEquals(request.version(), "HTTP/1.1");
+        Assert.assertEquals(RequestSnapshot.of(request).version(), "HTTP/1.1");
     }
 
     /**
@@ -156,7 +156,7 @@ public class RequestTest {
         Request result = request.addHeader("Content-Type", "application/json");
         Assert.assertEquals(request, result);
 
-        Header[] headers = request.headers();
+        Header[] headers = RequestSnapshot.of(request).headers();
         Assert.assertEquals(headers.length, 1);
         Assert.assertEquals(headers[0].getName(), "Content-Type");
         Assert.assertEquals(headers[0].getValue(), "application/json");
@@ -172,7 +172,7 @@ public class RequestTest {
         Request result = request.addHeader(header);
         Assert.assertEquals(request, result);
 
-        Header[] headers = request.headers();
+        Header[] headers = RequestSnapshot.of(request).headers();
         Assert.assertEquals(headers.length, 1);
         Assert.assertEquals(headers[0].getName(), "Authorization");
         Assert.assertEquals(headers[0].getValue(), "Bearer token");
@@ -189,7 +189,7 @@ public class RequestTest {
                 .addHeader("User-Agent", "TestAgent");
         Assert.assertEquals(request, result);
 
-        Header[] headers = request.headers();
+        Header[] headers = RequestSnapshot.of(request).headers();
         Assert.assertEquals(headers.length, 3);
     }
 
@@ -205,7 +205,7 @@ public class RequestTest {
         });
         Assert.assertEquals(request, result);
 
-        Header[] headers = request.headers();
+        Header[] headers = RequestSnapshot.of(request).headers();
         Assert.assertEquals(headers.length, 2);
         Assert.assertEquals(headers[0].getName(), "Content-Type");
         Assert.assertEquals(headers[0].getValue(), "application/json");
@@ -226,7 +226,7 @@ public class RequestTest {
         Request result = request.headers(headerList);
         Assert.assertEquals(request, result);
 
-        Header[] headers = request.headers();
+        Header[] headers = RequestSnapshot.of(request).headers();
         Assert.assertEquals(headers.length, 2);
     }
 
@@ -239,7 +239,7 @@ public class RequestTest {
         Request result = request.userAgent("TestAgent/1.0");
         Assert.assertEquals(request, result);
 
-        Header[] headers = request.headers();
+        Header[] headers = RequestSnapshot.of(request).headers();
         boolean foundUserAgent = false;
         for (Header header : headers) {
             if ("User-Agent".equals(header.getName()) && "TestAgent/1.0".equals(header.getValue())) {
@@ -259,8 +259,8 @@ public class RequestTest {
         Form queryForm = Form.create().add("param1", "value1").add("param2", "value2");
         Request result = request.query(queryForm);
         Assert.assertEquals(request, result);
-        Assert.assertTrue(request.query().contains("\"param1\": \"value1\""));
-        Assert.assertTrue(request.query().contains("\"param2\": \"value2\""));
+        Assert.assertTrue(RequestSnapshot.of(request).query().contains("\"param1\": \"value1\""));
+        Assert.assertTrue(RequestSnapshot.of(request).query().contains("\"param2\": \"value2\""));
     }
 
     /**
@@ -331,7 +331,7 @@ public class RequestTest {
     @Test
     public void testGetUri() {
         Request request = Request.get("http://example.com/path");
-        Assert.assertEquals(request.uri(), "http://example.com/path");
+        Assert.assertEquals(RequestSnapshot.of(request).uri().toString(), "http://example.com/path");
     }
 
     /**
@@ -340,7 +340,7 @@ public class RequestTest {
     @Test
     public void testGetUriWithDefaultPath() {
         Request request = Request.get("http://example.com");
-        Assert.assertEquals(request.uri(), "http://example.com/");
+        Assert.assertEquals(RequestSnapshot.of(request).uri().toString(), "http://example.com/");
     }
 
     /**

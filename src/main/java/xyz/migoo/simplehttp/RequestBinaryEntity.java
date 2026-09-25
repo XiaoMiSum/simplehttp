@@ -36,7 +36,7 @@ import org.apache.hc.core5.http.HttpEntity;
  * 
  * @author xiaomi
  */
-public class RequestBinaryEntity extends RequestEntity {
+class RequestBinaryEntity extends RequestEntity {
 
     /**
      * 构造一个新的二进制文件请求实体
@@ -44,7 +44,7 @@ public class RequestBinaryEntity extends RequestEntity {
      * @param entity HTTP实体对象
      * @param content 实体内容的字节数组
      */
-    public RequestBinaryEntity(HttpEntity entity, byte[] content) {
+    RequestBinaryEntity(HttpEntity entity, byte[] content) {
         super(entity, content);
     }
 }
