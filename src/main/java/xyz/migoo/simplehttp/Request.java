@@ -272,10 +272,6 @@ public class Request {
         return this;
     }
 
-    public String proxy() {
-        return proxy == null ? null : proxy.toString();
-    }
-
     public List<Cookie> cookies() {
         return cookies;
     }

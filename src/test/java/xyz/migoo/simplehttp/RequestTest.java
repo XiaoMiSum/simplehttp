@@ -271,7 +271,9 @@ public class RequestTest {
         Request request = Request.get("http://example.com");
         Request result = request.proxy("localhost", 8080);
         Assert.assertEquals(request, result);
-        Assert.assertNotNull(request.proxy());
+        Assert.assertNotNull(request.getProxy());
+        Assert.assertEquals(request.getProxy().getHost(), "localhost");
+        Assert.assertEquals(request.getProxy().getPort().intValue(), 8080);
     }
 
     /**
@@ -282,7 +284,11 @@ public class RequestTest {
         Request request = Request.get("http://example.com");
         Request result = request.proxy("http", "localhost", 8080, "user", "pass");
         Assert.assertEquals(request, result);
-        Assert.assertNotNull(request.proxy());
+        Assert.assertNotNull(request.getProxy());
+        Assert.assertEquals(request.getProxy().getScheme(), "http");
+        Assert.assertEquals(request.getProxy().getHost(), "localhost");
+        Assert.assertEquals(request.getProxy().getUsername(), "user");
+        Assert.assertEquals(request.getProxy().getPassword(), "pass");
     }
 
     /**
