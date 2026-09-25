@@ -276,7 +276,7 @@ public class Response {
      *
      * @return 字符集
      */
-    public Charset charset() {
+    Charset charset() {
         var contentType = contentType();
         if (contentType != null) {
             try {
@@ -296,7 +296,7 @@ public class Response {
      *
      * @return Content-Type 值，不存在时返回 {@code null}
      */
-    public String contentType() {
+    private String contentType() {
         return rawHeaderOrHeader(HttpHeaders.CONTENT_TYPE);
     }
 

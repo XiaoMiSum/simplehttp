@@ -17,7 +17,7 @@ public class HttpExecutionException extends Exception {
 
     private final transient Exchange exchange;
 
-    public HttpExecutionException(String message, Throwable cause, Exchange exchange) {
+    HttpExecutionException(String message, Throwable cause, Exchange exchange) {
         super(message, cause);
         this.exchange = exchange;
     }

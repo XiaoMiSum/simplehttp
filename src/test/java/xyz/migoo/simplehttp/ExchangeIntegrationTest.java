@@ -409,7 +409,7 @@ public class ExchangeIntegrationTest {
         Assert.assertTrue(thrown instanceof HttpExecutionException, "应包装为 HttpExecutionException，实际为 " + thrown);
         var exception = (HttpExecutionException) thrown;
         Assert.assertNotNull(exception.exchange(), "异常必须携带交换记录");
-        Assert.assertTrue(exception.exchange().isFailed());
+        Assert.assertTrue(exception.exchange().failure() != null);
         Assert.assertEquals(exception.exchange().stage(), Exchange.Stage.CONNECT);
         Assert.assertEquals(exception.exchange().request().method(), "GET");
         Assert.assertTrue(exception.exchange().request().uri().toString().contains("/nothing"));
@@ -626,7 +626,7 @@ public class ExchangeIntegrationTest {
         Assert.assertEquals(attempt.httpVersion(), "HTTP/1.1");
         Assert.assertNull(attempt.location());
         Assert.assertTrue(attempt.wireHeader("Host").contains("127.0.0.1"));
-        Assert.assertNotNull(attempt.header("Content-Type"));
+        Assert.assertNotNull(headerValue(attempt.rawHeaders(), "Content-Type"));
         Assert.assertTrue(attempt.ttfbMillis() >= 0);
 
         var dump = response.exchange().toWireString();

@@ -33,7 +33,7 @@ public final class Exchange {
     /**
      * 交换记录在 {@link HttpClientContext} 中的属性名
      */
-    public static final String ATTRIBUTE = "xyz.migoo.simplehttp.exchange";
+    static final String ATTRIBUTE = "xyz.migoo.simplehttp.exchange";
 
     /**
      * 当前跳（attempt）在 {@link HttpClientContext} 中的属性名
@@ -104,13 +104,6 @@ public final class Exchange {
     }
 
     /**
-     * @return 实际使用的路由（含目标主机与代理），未建立连接时为 {@code null}
-     */
-    public HttpRoute route() {
-        return route;
-    }
-
-    /**
      * @return 实际请求的目标主机，未建立连接时为 {@code null}
      */
     public HttpHost target() {
@@ -163,24 +156,10 @@ public final class Exchange {
     }
 
     /**
-     * @return 交换是否已结束（无论成功失败）
-     */
-    public boolean isCompleted() {
-        return completed;
-    }
-
-    /**
      * @return 是否成功完成
      */
     public boolean isSuccess() {
         return completed && failure == null;
-    }
-
-    /**
-     * @return 是否已失败
-     */
-    public boolean isFailed() {
-        return failure != null;
     }
 
     /**
@@ -200,7 +179,7 @@ public final class Exchange {
     /**
      * @return 最终响应的线上原样响应头（未经自动解压逻辑删改），无响应时为空数组
      */
-    public Header[] rawHeaders() {
+    Header[] rawHeaders() {
         var last = lastAttempt();
         return last == null ? new Header[0] : last.rawHeaders();
     }
@@ -208,7 +187,7 @@ public final class Exchange {
     /**
      * @return 最终响应的线上原样响应体字节（保留压缩态），无响应或已落盘时为空数组
      */
-    public byte[] rawBody() {
+    byte[] rawBody() {
         var last = lastAttempt();
         return last == null ? new byte[0] : last.rawBody();
     }

@@ -27,7 +27,7 @@ final class WireRequestInterceptor implements HttpRequestInterceptor {
         if (attempt == null) {
             return;
         }
-        attempt.markRequest(request, entityDetails);
+        attempt.markRequest(request);
         if (request instanceof ClassicHttpRequest classic) {
             prepareBody(classic, attempt);
         } else {

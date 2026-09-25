@@ -4,7 +4,8 @@ package xyz.migoo.simplehttp;
  * 一次 HTTP 交换的耗时记录。
  * <p>
  * 所有耗时均基于 {@link System#nanoTime()} 差值计算（不受系统时钟调整影响），
- * 墙钟时间（{@link #startTime()} / {@link #endTime()}）仅用于展示与对齐日志。
+ * 墙钟时间 {@link #startTime()} 仅用于展示与对齐日志，结束时间可由
+ * {@code startTime() + totalMillis()} 得到。
  * <p>
  * 口径说明：
  * <ul>
@@ -67,13 +68,6 @@ public final class Timings {
      */
     public long startTime() {
         return startTime;
-    }
-
-    /**
-     * @return 交换结束的墙钟时间（毫秒），未完成时返回 {@code 0}
-     */
-    public long endTime() {
-        return completedNanos == 0 ? 0 : startTime + millisBetween(startNanos, completedNanos);
     }
 
     /**
