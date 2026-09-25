@@ -109,13 +109,6 @@ public class RequestJsonEntityTest {
         Assert.assertNotNull(requestEntity.getEntity());
         Assert.assertNotNull(requestEntity.getContent());
 
-        // 通过RequestEntity.json方法创建实例（使用Supplier）
-        RequestEntity requestEntity2 = RequestEntity.json(() -> json);
-
-        Assert.assertTrue(requestEntity2 instanceof RequestJsonEntity);
-        Assert.assertNotNull(requestEntity2.getEntity());
-        Assert.assertNotNull(requestEntity2.getContent());
-
         // 通过RequestEntity.json方法创建实例（使用Customizer）
         RequestEntity requestEntity3 = RequestEntity.json(map -> {
             map.put("keyA", "valueA");

@@ -141,19 +141,8 @@ public class RequestFormEntityTest {
         Assert.assertNotNull(requestEntity.getEntity());
         Assert.assertNotNull(requestEntity.getContent());
 
-        // 通过RequestEntity.form方法创建实例（使用Customizer）
-        RequestEntity requestEntity2 = RequestEntity.form(customizer -> {
-            customizer.put("fieldA", "valueA");
-            customizer.put("fieldB", 456);
-        });
-
-        // 验证创建的实体是RequestFormEntity类型
-        Assert.assertTrue(requestEntity2 instanceof RequestFormEntity);
-        Assert.assertNotNull(requestEntity2.getEntity());
-        Assert.assertNotNull(requestEntity2.getContent());
-
         // 通过RequestEntity.form2方法创建实例（使用Form Customizer）
-        RequestEntity requestEntity3 = RequestEntity.form2(form ->
+        RequestEntity requestEntity3 = RequestEntity.form(form ->
                 form.add("name", "test").add("value", "data"));
 
         // 验证创建的实体是RequestFormEntity类型

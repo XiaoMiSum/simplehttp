@@ -40,15 +40,6 @@ import org.testng.annotations.Test;
 public class HttpProxyTest {
 
     /**
-     * 测试创建空的代理配置实例
-     */
-    @Test
-    public void testCreateEmptyHttpProxy() {
-        HttpProxy proxy = new HttpProxy();
-        Assert.assertNotNull(proxy);
-    }
-
-    /**
      * 测试使用主机和端口创建代理配置实例
      */
     @Test
@@ -91,56 +82,6 @@ public class HttpProxyTest {
     }
 
     /**
-     * 测试设置和获取代理协议
-     */
-    @Test
-    public void testSetAndGetScheme() {
-        HttpProxy proxy = new HttpProxy();
-        proxy.setScheme("https");
-        Assert.assertEquals(proxy.getScheme(), "https");
-    }
-
-    /**
-     * 测试设置和获取代理主机地址
-     */
-    @Test
-    public void testSetAndGetHost() {
-        HttpProxy proxy = new HttpProxy();
-        proxy.setHost("proxy.example.com");
-        Assert.assertEquals(proxy.getHost(), "proxy.example.com");
-    }
-
-    /**
-     * 测试设置和获取代理端口号
-     */
-    @Test
-    public void testSetAndGetPort() {
-        HttpProxy proxy = new HttpProxy();
-        proxy.setPort(3128);
-        Assert.assertEquals(proxy.getPort(), Integer.valueOf(3128));
-    }
-
-    /**
-     * 测试设置和获取认证用户名
-     */
-    @Test
-    public void testSetAndGetUsername() {
-        HttpProxy proxy = new HttpProxy();
-        proxy.setUsername("testuser");
-        Assert.assertEquals(proxy.getUsername(), "testuser");
-    }
-
-    /**
-     * 测试设置和获取认证密码
-     */
-    @Test
-    public void testSetAndGetPassword() {
-        HttpProxy proxy = new HttpProxy();
-        proxy.setPassword("testpass");
-        Assert.assertEquals(proxy.getPassword(), "testpass");
-    }
-
-    /**
      * 测试检查用户名和密码是否设置的方法（都有设置）
      */
     @Test
@@ -154,8 +95,7 @@ public class HttpProxyTest {
      */
     @Test
     public void testHasUsernameAndPasswordWithOnlyUsername() {
-        HttpProxy proxy = new HttpProxy();
-        proxy.setUsername("user");
+        HttpProxy proxy = new HttpProxy("http", "localhost", 8080, "user", null);
         Assert.assertFalse(proxy.hasUsernameAndPassword());
     }
 
@@ -164,8 +104,7 @@ public class HttpProxyTest {
      */
     @Test
     public void testHasUsernameAndPasswordWithOnlyPassword() {
-        HttpProxy proxy = new HttpProxy();
-        proxy.setPassword("password");
+        HttpProxy proxy = new HttpProxy("http", "localhost", 8080, null, "password");
         Assert.assertFalse(proxy.hasUsernameAndPassword());
     }
 
@@ -174,7 +113,7 @@ public class HttpProxyTest {
      */
     @Test
     public void testHasUsernameAndPasswordWithNoneSet() {
-        HttpProxy proxy = new HttpProxy();
+        HttpProxy proxy = new HttpProxy("localhost", 8080);
         Assert.assertFalse(proxy.hasUsernameAndPassword());
     }
 
@@ -183,9 +122,7 @@ public class HttpProxyTest {
      */
     @Test
     public void testHasUsernameAndPasswordWithEmptyStrings() {
-        HttpProxy proxy = new HttpProxy();
-        proxy.setUsername("");
-        proxy.setPassword("");
+        HttpProxy proxy = new HttpProxy("http", "localhost", 8080, "", "");
         Assert.assertFalse(proxy.hasUsernameAndPassword());
     }
 
@@ -210,9 +147,7 @@ public class HttpProxyTest {
      */
     @Test
     public void testToStringWithNullFields() {
-        HttpProxy proxy = new HttpProxy();
-        proxy.setHost("localhost");
-        proxy.setPort(8080);
+        HttpProxy proxy = new HttpProxy("localhost", 8080);
         String proxyString = proxy.toString();
         Assert.assertNotNull(proxyString);
         Assert.assertFalse(proxyString.isEmpty());

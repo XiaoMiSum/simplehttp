@@ -36,11 +36,14 @@ import org.apache.hc.core5.http.NameValuePair;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.function.Supplier;
 
 import static xyz.migoo.simplehttp.RequestJsonEntity.toJson;
 
 /**
+ * 请求体工厂：全部构造入口都是静态工厂，不暴露实现子类，也不暴露底层 {@code HttpEntity}。
+ * 返回值只作为 {@link Request#body(RequestEntity)} 的入参；请求体的实际内容读取走
+ * {@link Exchange#request()} 的 {@link RequestSnapshot#body()}。
+ *
  * @author xiaomi
  *         Created in 2021/7/21 19:50
  */
@@ -52,10 +55,6 @@ public abstract class RequestEntity {
     protected RequestEntity(HttpEntity entity, byte[] content) {
         this.entity = entity;
         this.content = content;
-    }
-
-    public static RequestEntity json(Supplier<String> supplier) {
-        return new RequestJsonEntity(supplier.get());
     }
 
     public static RequestEntity json(String json) {
@@ -72,17 +71,11 @@ public abstract class RequestEntity {
         return new RequestJsonEntity(body);
     }
 
-    public static RequestEntity form(Customizer<Map<String, Object>> customizer) {
-        Map<String, Object> data = HashMap.newHashMap(16);
-        customizer.customize(data);
-        return new RequestFormEntity(data);
-    }
-
     public static RequestEntity form(Map<String, Object> data) {
         return new RequestFormEntity(data);
     }
 
-    public static RequestEntity form2(Customizer<Form> customizer) {
+    public static RequestEntity form(Customizer<Form> customizer) {
         var form = Form.create();
         customizer.customize(form);
         return new RequestFormEntity(form);
@@ -100,16 +93,8 @@ public abstract class RequestEntity {
         return new RequestBytesEntity(bytes, "application/x-protobuf");
     }
 
-    public static RequestEntity proto(Supplier<byte[]> supplier) {
-        return new RequestBytesEntity(supplier.get(), "application/x-protobuf");
-    }
-
     public static RequestEntity bytes(byte[] bytes, String mimeType) {
         return new RequestBytesEntity(bytes, mimeType);
-    }
-
-    public static RequestEntity binary(Supplier<NameValuePair> supplier) {
-        return binary(supplier.get(), null);
     }
 
     public static RequestEntity binary(NameValuePair fileNvp) {
@@ -124,12 +109,6 @@ public abstract class RequestEntity {
 
     public static RequestEntity binary(List<NameValuePair> files) {
         return binary(files, null);
-    }
-
-    public static RequestEntity binary(Supplier<NameValuePair> supplier, Customizer<Map<String, Object>> customizer) {
-        Map<String, Object> data = HashMap.newHashMap(16);
-        customizer.customize(data);
-        return binary(List.of(supplier.get()), data);
     }
 
     public static RequestEntity binary(NameValuePair fileNvp, Map<String, Object> data) {
@@ -164,11 +143,11 @@ public abstract class RequestEntity {
         return new RequestBinaryEntity(builder.build(), toJson(content).getBytes(StandardCharsets.UTF_8));
     }
 
-    public HttpEntity getEntity() {
+    HttpEntity getEntity() {
         return entity;
     }
 
-    public byte[] getContent() {
+    byte[] getContent() {
         return content;
     }
 

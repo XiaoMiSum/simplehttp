@@ -115,7 +115,7 @@ public class RequestBytesEntityTest {
         byte[] testData = new byte[]{1, 2, 3, 4, 5};
 
         // 通过RequestEntity.proto方法创建实例
-        RequestEntity requestEntity = RequestEntity.proto(() -> testData);
+        RequestEntity requestEntity = RequestEntity.proto(testData);
 
         // 验证创建的实体是RequestBytesEntity类型
         Assert.assertTrue(requestEntity instanceof RequestBytesEntity);

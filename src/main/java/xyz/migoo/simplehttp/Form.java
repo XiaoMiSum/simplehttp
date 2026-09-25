@@ -120,7 +120,7 @@ public class Form {
      *
      * @return 表单数据列表
      */
-    public List<NameValuePair> build() {
+    List<NameValuePair> build() {
         return this.data;
     }
 

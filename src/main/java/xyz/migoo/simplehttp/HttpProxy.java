@@ -33,6 +33,8 @@ import java.util.Objects;
 /**
  * HTTP代理配置类，用于设置HTTP请求的代理服务器信息
  * 包括代理服务器地址、端口、认证信息等
+ * <p>
+ * 不可变：构造时给定全部字段，之后只能读取。
  *
  * @author xiaomi
  *         Created at 2020/1/4 12:36
@@ -42,33 +44,27 @@ public class HttpProxy {
     /**
      * 代理协议（如http、https）
      */
-    private String scheme;
+    private final String scheme;
 
     /**
      * 代理主机地址
      */
-    private String host;
+    private final String host;
 
     /**
      * 代理端口号
      */
-    private Integer port;
+    private final Integer port;
 
     /**
      * 代理认证用户名
      */
-    private String username;
+    private final String username;
 
     /**
      * 代理认证密码
      */
-    private String password;
-
-    /**
-     * 创建一个空的代理配置实例
-     */
-    public HttpProxy() {
-    }
+    private final String password;
 
     /**
      * 创建一个代理配置实例
@@ -118,30 +114,12 @@ public class HttpProxy {
     }
 
     /**
-     * 设置代理协议
-     *
-     * @param scheme 代理协议
-     */
-    public void setScheme(String scheme) {
-        this.scheme = scheme;
-    }
-
-    /**
      * 获取代理主机地址
      *
      * @return 代理主机地址
      */
     public String getHost() {
         return host;
-    }
-
-    /**
-     * 设置代理主机地址
-     *
-     * @param host 代理主机地址
-     */
-    public void setHost(String host) {
-        this.host = host;
     }
 
     /**
@@ -154,15 +132,6 @@ public class HttpProxy {
     }
 
     /**
-     * 设置代理端口号
-     *
-     * @param port 代理端口号
-     */
-    public void setPort(Integer port) {
-        this.port = port;
-    }
-
-    /**
      * 获取认证用户名
      *
      * @return 认证用户名
@@ -172,30 +141,12 @@ public class HttpProxy {
     }
 
     /**
-     * 设置认证用户名
-     *
-     * @param username 认证用户名
-     */
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    /**
      * 获取认证密码
      *
      * @return 认证密码
      */
     public String getPassword() {
         return password;
-    }
-
-    /**
-     * 设置认证密码
-     *
-     * @param password 认证密码
-     */
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     /**

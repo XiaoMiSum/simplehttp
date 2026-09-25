@@ -61,20 +61,6 @@ public class RequestEntityTest {
     }
 
     /**
-     * 测试JSON实体创建 - 通过Supplier
-     */
-    @Test
-    public void testJsonEntityWithSupplier() {
-        String json = "{\"name\":\"test\",\"value\":123}";
-        RequestEntity entity = RequestEntity.json(() -> json);
-
-        Assert.assertNotNull(entity);
-        Assert.assertTrue(entity instanceof RequestJsonEntity);
-        Assert.assertNotNull(entity.getEntity());
-        Assert.assertEquals(new String(entity.getContent(), StandardCharsets.UTF_8), json);
-    }
-
-    /**
      * 测试JSON实体创建 - 通过Map
      */
     @Test
@@ -127,22 +113,6 @@ public class RequestEntityTest {
     }
 
     /**
-     * 测试表单实体创建 - 通过Customizer
-     */
-    @Test
-    public void testFormEntityWithCustomizer() {
-        RequestEntity entity = RequestEntity.form(map -> {
-            map.put("name", "test");
-            map.put("value", 123);
-        });
-
-        Assert.assertNotNull(entity);
-        Assert.assertTrue(entity instanceof RequestFormEntity);
-        Assert.assertNotNull(entity.getEntity());
-        Assert.assertNotNull(entity.getContent());
-    }
-
-    /**
      * 测试表单实体创建 - 通过Form对象
      */
     @Test
@@ -164,7 +134,7 @@ public class RequestEntityTest {
      */
     @Test
     public void testFormEntityWithFormCustomizer() {
-        RequestEntity entity = RequestEntity.form2(form -> form.add("name", "test").add("value", "123"));
+        RequestEntity entity = RequestEntity.form(form -> form.add("name", "test").add("value", "123"));
 
         Assert.assertNotNull(entity);
         Assert.assertTrue(entity instanceof RequestFormEntity);
@@ -193,20 +163,6 @@ public class RequestEntityTest {
     public void testProtoEntityWithBytes() {
         byte[] bytes = new byte[] { 1, 2, 3, 4, 5 };
         RequestEntity entity = RequestEntity.proto(bytes);
-
-        Assert.assertNotNull(entity);
-        Assert.assertTrue(entity instanceof RequestBytesEntity);
-        Assert.assertNotNull(entity.getEntity());
-        Assert.assertEquals(entity.getContent(), bytes);
-    }
-
-    /**
-     * 测试Protobuf实体创建 - 通过Supplier
-     */
-    @Test
-    public void testProtoEntityWithSupplier() {
-        byte[] bytes = new byte[] { 1, 2, 3, 4, 5 };
-        RequestEntity entity = RequestEntity.proto(() -> bytes);
 
         Assert.assertNotNull(entity);
         Assert.assertTrue(entity instanceof RequestBytesEntity);
@@ -373,48 +329,6 @@ public class RequestEntityTest {
     }
 
     /**
-     * 测试二进制实体创建 - 通过Supplier和Customizer
-     */
-    @Test
-    public void testBinaryEntityWithSupplierAndCustomizer() {
-        java.io.File tempFile = new java.io.File("temp_supplier.txt");
-        if (!tempFile.exists()) {
-            try {
-                tempFile.createNewFile();
-            } catch (Exception e) {
-                // 忽略异常
-            }
-        }
-
-        try {
-            NameValuePair nvp = new NameValuePair() {
-                @Override
-                public String getName() {
-                    return "file";
-                }
-
-                @Override
-                public String getValue() {
-                    return tempFile.getAbsolutePath();
-                }
-            };
-
-            RequestEntity entity = RequestEntity.binary(
-                    () -> nvp,
-                    data -> data.put("key", "value"));
-
-            Assert.assertNotNull(entity);
-            Assert.assertTrue(entity instanceof RequestBinaryEntity);
-            Assert.assertNotNull(entity.getEntity());
-            Assert.assertNotNull(entity.getContent());
-        } finally {
-            if (tempFile.exists()) {
-                tempFile.delete();
-            }
-        }
-    }
-
-    /**
      * 测试二进制实体创建 - 通过NameValuePair和Map数据
      */
     @Test
@@ -491,46 +405,6 @@ public class RequestEntityTest {
                         data.put("field1", "value1");
                         data.put("field2", "value2");
                     });
-
-            Assert.assertNotNull(entity);
-            Assert.assertTrue(entity instanceof RequestBinaryEntity);
-            Assert.assertNotNull(entity.getEntity());
-            Assert.assertNotNull(entity.getContent());
-        } finally {
-            if (tempFile.exists()) {
-                tempFile.delete();
-            }
-        }
-    }
-
-    /**
-     * 测试二进制实体创建 - 通过Supplier
-     */
-    @Test
-    public void testBinaryEntityWithSupplier() {
-        java.io.File tempFile = new java.io.File("temp_supplier_only.txt");
-        if (!tempFile.exists()) {
-            try {
-                tempFile.createNewFile();
-            } catch (Exception e) {
-                // 忽略异常
-            }
-        }
-
-        try {
-            NameValuePair nvp = new NameValuePair() {
-                @Override
-                public String getName() {
-                    return "file";
-                }
-
-                @Override
-                public String getValue() {
-                    return tempFile.getAbsolutePath();
-                }
-            };
-
-            RequestEntity entity = RequestEntity.binary(() -> nvp);
 
             Assert.assertNotNull(entity);
             Assert.assertTrue(entity instanceof RequestBinaryEntity);
