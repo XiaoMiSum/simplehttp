@@ -496,7 +496,9 @@ public class Demo {
   `Request` 的链式方法全是「写」，唯一能读的是 `exchange()`（最近一次执行的交换记录，未执行过时为 `null`）；
   执行前想保留自己的配置，请自行存变量。
 - `bytes()` / `text()` 是**自动解压后**的结果视图；`rawBytes()` / `rawHeaders()` 是**线上原样**的真实视图。
-  gzip 响应在解压时会被客户端移除 `Content-Length`/`Content-Encoding`，因此判断压缩与线上长度请用 raw 系列 API。
+  gzip 响应解压后，结果视图会主动移除 `Content-Length`/`Content-Encoding`（由 `Response` 归一，
+  与 httpclient5 版本无关，否则会出现「头说 33 字节、体却 40 字节」的自相矛盾），
+  因此判断压缩与线上长度请用 `contentEncoding()` / `contentLength()` / raw 系列 API。
 - `text()` 按 `Content-Type` 中的 `charset` 解码，缺省 UTF-8；需要覆盖用 `text(Charset)`。
 - query 参数不会回写 `exchange().request().uri()`，最终地址请取 `exchange().finalUri()`；
   客户端自动补全的头请取 `attempt.wireHeaders()`。
@@ -517,7 +519,7 @@ public class Demo {
 
 - **23 个** public 成员被删除 —— `Request` 8 个读取口、`RequestEntity` 8 个、`HttpProxy` 6 个、`Form` 1 个；
 - **5 个** public 类型降为包私有 —— `HttpRequest` 与 4 个 `RequestEntity` 子类；
-- **5 项**行为变更 —— `Response.cookies()` 返回空列表、gzip 解压后 `Content-Length`/`Content-Encoding` 被移除、
+- **5 项**行为变更 —— `Response.cookies()` 返回空列表、gzip 解压后结果视图不再携带 `Content-Length`/`Content-Encoding`、
   `Request#socketTimeout` 废弃、`HttpProxy` 不可变、连接池不再随单次请求关闭。
 
 重构背景、三层架构、双轨模型、逐成员**旧 → 新**迁移对照表与代码示例，见

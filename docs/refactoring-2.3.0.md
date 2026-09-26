@@ -12,7 +12,7 @@
 | public 顶层类型 | 13 | 14 |
 | public 成员声明 | 123 | **168** |
 | 可触及 public 成员 | — | **162** |
-| 测试用例 | 180 | 192 |
+| 测试用例 | 180 | 199 |
 | 能拿到的信息 | 只有结果视图 | 意图快照 + 逐跳线上报文 + 链路/耗时 |
 | `HttpProxy` | 可变 POJO | 不可变 |
 | `Request` 读取口 | 8 个 | **1 个**（`exchange()`） |
@@ -144,16 +144,16 @@ ExchangeRecorder（addExecInterceptorLast，每跳收口）
 | 提交 | 说明 | public 声明 | 可触及 | 顶层类型 |
 |---|---|---|---|---|
 | `d8ac71c` | 2.2.7 基线 | 123 | — | 13 |
-| `a65533d` | M0–M4 落地 | 213 | 207 | 19 |
-| `85a28fe` | 16 项收敛 | 197 | 191 | 14 |
-| `774218b` | 内部类型降级 + 读取口统一 | 184 | 178 | 14 |
-| `bc91907` | 删 `Request#proxy` | 183 | 177 | 14 |
-| `2dc8820` | 删 `Request#cookies` | 182 | 176 | 14 |
-| `0dba401` | 三类收敛 | **168** | **162** | **14** |
+| `53ab6cc` | M0–M4 落地 | 213 | 207 | 19 |
+| `8b36cf1` | 16 项收敛 | 197 | 191 | 14 |
+| `3fd1512` | 内部类型降级 + 读取口统一 | 184 | 178 | 14 |
+| `fb7016e` | 删 `Request#proxy` | 183 | 177 | 14 |
+| `e4d2ded` | 删 `Request#cookies` | 182 | 176 | 14 |
+| `3f70538` | 三类收敛 | **168** | **162** | **14** |
 
 > **计数口径**：源码里声明的 `public` 成员，**不含继承**。"可触及"再减去 `Attempt` 内 2 个**私有**嵌套类（`ResponseBodySink` / `WireBodySink`）上因实现 `TeeEntity.BodySink` 接口而被强制声明为 `public` 的 6 个方法。
 
-### `85a28fe` 的 16 项
+### `8b36cf1` 的 16 项
 
 只处理"实现泄漏与语义重叠"，不碰易用性：
 
@@ -275,7 +275,7 @@ System.out.println(response.exchange().finalUri());        // 线上最终 URI�
 | 变更 | 影响与对策 |
 |---|---|
 | `Response.cookies()` 无 Cookie 时返回**空列表**而非 `null` | 2.2.7 里 `if (response.cookies() != null)` 的判空可以删；`response.cookies().isEmpty()` 更直接 |
-| gzip 响应解压后客户端移除 `Content-Length` / `Content-Encoding` | 判断压缩与线上长度改用 `response.rawHeaders()` / `response.contentLength()` / `response.contentEncoding()`；`bytes()` / `text()` 仍是解压后语义 |
+| gzip 响应解压后，**结果视图**移除 `Content-Length` / `Content-Encoding`（2.3.0 由 `Response` 自行归一，与 httpclient5 版本无关；线上原样由 `rawHeaders()` 保留） | 判断压缩与线上长度改用 `response.rawHeaders()` / `response.contentLength()` / `response.contentEncoding()`；`bytes()` / `text()` 仍是解压后语义 |
 | `Request#socketTimeout` 废弃 | 改用 `Request#connectionRequestTimeout`（从连接池取连接的超时）；建连超时用 `Builder#connectTimeout`，读响应超时用 `Builder#readTimeout` |
 | `HttpProxy` 变为不可变 | 见 6.1 的 setter 迁移 |
 | 连接池不再随单次请求关闭 | 这是 P0 修复。长生命周期 `SimpleHttp` 现在可正常复用；用完请 `close()`（幂等），全局单例 `getDefault()` 不可关闭 |
@@ -296,7 +296,7 @@ System.out.println(response.exchange().finalUri());        // 线上最终 URI�
 mvn -B verify
 ```
 
-- **192 tests, Failures 0, Errors 0**（基线 180）
+- **199 tests, Failures 0, Errors 0**（基线 180）
 - javadoc 构建**零告警**
 - `ReadmeCompilationTest` 用 `javax.tools` 真编译 readme 里的每一个 java 代码块，文档示例与实现不会脱节
 - 集成测试覆盖真实链路：本地起 HTTP 服务端 + 自建 TinyProxy，逐项断言线上的请求头/请求体/响应头/响应体、重定向链、路由、超时截断、`captureEnabled(false)`、失败归档
@@ -310,9 +310,17 @@ mvn -B verify
 | 提交 | 内容 |
 |---|---|
 | `d8ac71c` | **2.2.7 基线** |
-| `a65533d` | M0–M4：三层采集架构、双轨视图、单 client 生命周期、21 个真实链路测试、readme 3.7/4/5 章节、版本升 2.3.0 |
-| `85a28fe` | 修正嵌套类切分遗留缩进；16 项 public 收敛 |
-| `774218b` | `HttpRequest` + 4 个 `RequestEntity` 子类降包私有；`Request` 6 个读取口删除，`RequestSnapshot` 新增 `query()` 成为唯一读取入口 |
-| `bc91907` | 删 `Request#proxy` |
-| `2dc8820` | 删 `Request#cookies`，`Request` 只剩 `exchange()` 一个读取口 |
-| `0dba401` | `HttpProxy` / `RequestEntity` / `Form` 三类收敛，`form2` 改名 `form` |
+| `ad2ccb9` | 升级 httpclient5 至 5.6.4（安全修复）与 testng 7.12、改用 `maven.compiler.release`——两条开发线的并入点 |
+| `53ab6cc` | M0–M4：三层采集架构、双轨视图、单 client 生命周期、21 个真实链路测试、readme 3.7/4/5 章节、版本升 2.3.0 |
+| `8b36cf1` | 修正嵌套类切分遗留缩进；16 项 public 收敛 |
+| `3fd1512` | `HttpRequest` + 4 个 `RequestEntity` 子类降包私有；`Request` 6 个读取口删除，`RequestSnapshot` 新增 `query()` 成为唯一读取入口 |
+| `fb7016e` | 删 `Request#proxy` |
+| `e4d2ded` | 删 `Request#cookies`，`Request` 只剩 `exchange()` 一个读取口 |
+| `3f70538` | `HttpProxy` / `RequestEntity` / `Form` 三类收敛，`form2` 改名 `form` |
+| `87ff4f3` | 补本篇重构文档 |
+| `93f7bbd` | 重构 readme，新增 `ReadmeCompilationTest` 保证文档示例可编译 |
+| `eaf970f` | 归一结果视图压缩元数据、Builder 参数校验、`Response` 耗时空安全；删除 8 个断言已否决设计的用例 |
+
+> 历史为单条直线，无合并提交。原 `d8fb89f`（另一台机器、作者 `unknown`）经 `git commit-tree`
+> 以相同树与日期重放为 `ad2ccb9`，仅修正作者/提交者为 `xiaomi <mi_xiao@qq.com>`；
+> 上表其余 SHA 均由 rebase 产生。重写前的备份在 `backup/pre-linearize`。
