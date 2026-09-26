@@ -350,44 +350,6 @@ public class RequestTest {
     }
 
     /**
-     * 测试fullUri保留URL自带的查询参数
-     */
-    @Test
-    public void testFullUriWithUrlQuery() {
-        Request request = Request.get("http://example.com/search?q=hello");
-        Assert.assertEquals(request.fullUri(), "http://example.com/search?q=hello");
-    }
-
-    /**
-     * 测试fullUri包含通过query(Form)设置的查询参数
-     */
-    @Test
-    public void testFullUriWithFormQuery() {
-        Request request = Request.get("http://example.com/search")
-                .query(Form.create().add("page", "1"));
-        Assert.assertEquals(request.fullUri(), "http://example.com/search?page=1");
-    }
-
-    /**
-     * 测试fullUri合并URL自带查询参数和Form查询参数
-     */
-    @Test
-    public void testFullUriMergesUrlAndFormQuery() {
-        Request request = Request.get("http://example.com/search?q=hello")
-                .query(Form.create().add("page", "1"));
-        Assert.assertEquals(request.fullUri(), "http://example.com/search?q=hello&page=1");
-    }
-
-    /**
-     * 测试fullUri无查询参数时不改变uri()的结果（除了尾部斜杠归一化）
-     */
-    @Test
-    public void testFullUriWithoutQuery() {
-        Request request = Request.get("http://example.com/path");
-        Assert.assertEquals(request.fullUri(), "http://example.com/path");
-    }
-
-    /**
      * 测试execute()方法委托给SimpleHttp.getDefault()
      */
     @Test

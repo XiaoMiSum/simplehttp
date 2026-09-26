@@ -46,6 +46,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.function.Function;
 
 import static java.nio.file.StandardOpenOption.CREATE;
@@ -66,6 +68,13 @@ import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
  * Created at 2019/9/13 11:01
  */
 public class Response {
+
+    /**
+     * 会被客户端自动解压的 Content-Encoding 取值；命中的响应体已是解压后字节，
+     * 结果视图随之不再携带压缩元数据（线上原样仍由 {@link #rawHeaders()} 保留）
+     */
+    private static final Set<String> DECOMPRESSED_ENCODINGS =
+            Set.of("gzip", "x-gzip", "deflate", "br", "zstd", "compress", "x-compress");
 
     /**
      * 请求开始时间戳
@@ -206,21 +215,21 @@ public class Response {
     }
 
     /**
-     * 获取请求结束时间戳（读完响应体之后）
+     * 获取请求结束时间戳（读完响应体之后）；尚未执行完成时回落为开始时间戳
      *
      * @return 请求结束时间戳
      */
     public long endTime() {
-        return endTime;
+        return endTime == null ? startTime : endTime;
     }
 
     /**
-     * 获取请求持续时间（毫秒），含响应体读取
+     * 获取请求持续时间（毫秒），含响应体读取；尚未执行完成时为 0
      *
      * @return 请求持续时间
      */
     public long duration() {
-        return endTime - startTime;
+        return endTime == null ? 0 : endTime - startTime;
     }
 
     /**
@@ -390,6 +399,43 @@ public class Response {
         return null;
     }
 
+    /**
+     * 构造结果视图的响应头：响应体被自动解压时，移除已与解压后字节不再对应的
+     * {@code Content-Encoding} 与 {@code Content-Length}，避免「头说 gzip/33 字节、
+     * 体却是 40 字节」的自相矛盾。线上原样头由 {@link #rawHeaders()} 完整保留。
+     *
+     * @param headers 客户端处理完的响应头
+     * @return 结果视图应使用的响应头
+     */
+    private static Header[] decodedViewHeaders(Header[] headers) {
+        if (headers == null || headers.length == 0) {
+            return new Header[0];
+        }
+        for (var header : headers) {
+            var value = header.getValue();
+            if (!HttpHeaders.CONTENT_ENCODING.equalsIgnoreCase(header.getName()) || value == null
+                    || !DECOMPRESSED_ENCODINGS.contains(value.trim().toLowerCase(Locale.ROOT))) {
+                continue;
+            }
+            var kept = new ArrayList<Header>(headers.length);
+            for (var candidate : headers) {
+                if (HttpHeaders.CONTENT_ENCODING.equalsIgnoreCase(candidate.getName())
+                        || HttpHeaders.CONTENT_LENGTH.equalsIgnoreCase(candidate.getName())) {
+                    continue;
+                }
+                kept.add(candidate);
+            }
+            return kept.toArray(new Header[0]);
+        }
+        return headers;
+    }
+
+    /**
+     * 按名称取头，线上原样优先，未采集到时回落到结果视图
+     *
+     * @param name 头名称
+     * @return 头值，不存在时为 {@code null}
+     */
     private String rawHeaderOrHeader(String name) {
         if (rawHeaders != null) {
             for (var header : rawHeaders) {
@@ -442,8 +488,7 @@ public class Response {
             var body = entity == null ? new byte[0] : EntityUtils.toByteArray(entity);
             result.endTime = System.currentTimeMillis();
             result.statusCode = response.getCode();
-            var responseHeaders = response.getHeaders();
-            result.headers = responseHeaders == null ? new Header[0] : responseHeaders;
+            result.headers = decodedViewHeaders(response.getHeaders());
             var version = response.getVersion();
             result.version = version == null ? null : version.toString();
             result.bytes = body;

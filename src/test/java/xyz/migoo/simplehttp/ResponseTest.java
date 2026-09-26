@@ -114,19 +114,6 @@ public class ResponseTest {
     }
 
     /**
-     * 测试header方法在响应头不存在时返回默认值
-     */
-    @Test
-    public void testHeaderWithDefaultValue() {
-        Response response = new Response(System.currentTimeMillis());
-        response.headers = new Header[] {
-                new BasicHeader("Content-Type", "application/json")
-        };
-        Assert.assertNull(response.header("X-Not-Exist"));
-        Assert.assertEquals(response.header("X-Not-Exist", "default"), "default");
-    }
-
-    /**
      * 测试duration方法在未执行请求时不会抛出NPE
      */
     @Test

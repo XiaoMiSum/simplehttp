@@ -206,12 +206,32 @@ public class SimpleHttp implements AutoCloseable {
         private Path captureDirectory = null;
         private boolean captureEnabled = true;
 
+        /**
+         * 连接池总量，必须为正数
+         *
+         * @param max 连接池可容纳的最大连接数
+         * @return 当前构建器
+         * @throws IllegalArgumentException max 不为正数
+         */
         public Builder maxConnections(int max) {
+            if (max <= 0) {
+                throw new IllegalArgumentException("maxConnections must be positive, but was " + max);
+            }
             this.maxConnections = max;
             return this;
         }
 
+        /**
+         * 单路由（目标主机 + 代理）最大连接数，必须为正数
+         *
+         * @param max 单路由最大连接数
+         * @return 当前构建器
+         * @throws IllegalArgumentException max 不为正数
+         */
         public Builder maxConnectionsPerRoute(int max) {
+            if (max <= 0) {
+                throw new IllegalArgumentException("maxConnectionsPerRoute must be positive, but was " + max);
+            }
             this.maxConnectionsPerRoute = max;
             return this;
         }

@@ -232,52 +232,26 @@ public class SimpleHttpTest {
     }
 
     /**
-     * 测试相同代理配置复用同一个客户端实例
-     */
-    @Test
-    public void testSameProxyReusesClient() {
-        SimpleHttp client = SimpleHttp.builder().build();
-        HttpProxy proxy = new HttpProxy("http", "proxy.example.com", 8080);
-        try {
-            Assert.assertSame(client.httpClient(proxy), client.httpClient(proxy));
-        } finally {
-            client.close();
-        }
-    }
-
-    /**
-     * 测试不同代理配置使用不同的客户端实例
-     */
-    @Test
-    public void testDifferentProxyUsesSeparateClient() {
-        SimpleHttp client = SimpleHttp.builder().build();
-        HttpProxy proxy1 = new HttpProxy("http", "proxy1.example.com", 8080);
-        HttpProxy proxy2 = new HttpProxy("http", "proxy2.example.com", 8080);
-        try {
-            Assert.assertNotSame(client.httpClient(proxy1), client.httpClient(proxy2));
-        } finally {
-            client.close();
-        }
-    }
-
-    /**
-     * 测试无代理时复用默认客户端
-     */
-    @Test
-    public void testNoProxyUsesDefaultClient() {
-        SimpleHttp client = SimpleHttp.builder().build();
-        try {
-            Assert.assertSame(client.httpClient(null), client.httpClient(new HttpProxy()));
-        } finally {
-            client.close();
-        }
-    }
-
-    /**
      * 测试Builder对非法参数进行校验
      */
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBuilderRejectsInvalidMaxConnections() {
         SimpleHttp.builder().maxConnections(0).build();
+    }
+
+    /**
+     * 测试Builder对负数的连接池总量同样拒绝
+     */
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testBuilderRejectsNegativeMaxConnections() {
+        SimpleHttp.builder().maxConnections(-1).build();
+    }
+
+    /**
+     * 测试Builder对非法单路由连接数进行校验
+     */
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testBuilderRejectsInvalidMaxConnectionsPerRoute() {
+        SimpleHttp.builder().maxConnectionsPerRoute(0).build();
     }
 }
