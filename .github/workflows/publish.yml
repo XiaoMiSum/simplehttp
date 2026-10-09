@@ -26,11 +26,6 @@ jobs:
           distribution: 'temurin'
           cache: maven
       
-      - name: Set up Maven
-        uses: stCarolas/setup-maven@v5
-        with:
-          maven-version: '3.9.6'
-      
       - name: Configure Git user
         run: |
           git config --global user.name "GitHub Actions"
@@ -39,7 +34,7 @@ jobs:
       - name: Update version (if triggered manually)
         if: github.event_name == 'workflow_dispatch'
         run: |
-          mvn versions:set -DnewVersion=${{ github.event.inputs.version }} -DgenerateBackupPoms=false
+          ./mvnw versions:set -DnewVersion=${{ github.event.inputs.version }} -DgenerateBackupPoms=false
           git add pom.xml
           git commit -m "Bump version to ${{ github.event.inputs.version }}"
           git tag -a "v${{ github.event.inputs.version }}" -m "Release version ${{ github.event.inputs.version }}"
@@ -52,10 +47,10 @@ jobs:
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
       
       - name: Build and Test
-        run: mvn clean test
+        run: ./mvnw clean test
       
       - name: Package
-        run: mvn package -DskipTests
+        run: ./mvnw package -DskipTests
       
       - name: Publish to Maven Central
         env:
@@ -93,7 +88,7 @@ jobs:
           EOF
           
           # Deploy to Maven Central
-          mvn deploy -P release -DskipTests
+          ./mvnw deploy -P release -DskipTests
 
       - name: Create GitHub Release
         if: github.event_name == 'workflow_dispatch'
