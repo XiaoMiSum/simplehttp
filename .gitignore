@@ -12,7 +12,6 @@ secret.key
 
 # Maven settings with credentials
 .m2/
-settings.xml
 
 # OS files
 .DS_Store
